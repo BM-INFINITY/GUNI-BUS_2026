@@ -30,7 +30,7 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            window.location.href = '/';
         }
         return Promise.reject(error);
     }
@@ -43,70 +43,52 @@ export const auth = {
     logout: () => api.post('/auth/logout')
 };
 
-// Students
-export const students = {
-    getAll: () => api.get('/students'),
-    getById: (id) => api.get(`/students/${id}`),
-    create: (data) => api.post('/students', data),
-    update: (id, data) => api.put(`/students/${id}`, data),
-    delete: (id) => api.delete(`/students/${id}`)
-};
-
-// Passes
-export const passes = {
-    apply: (data) => api.post('/passes/apply', data),
-    getUserPasses: (userId) => api.get(`/passes/user/${userId}`),
-    getPending: () => api.get('/passes/pending'),
-    approve: (id) => api.put(`/passes/${id}/approve`),
-    reject: (id) => api.put(`/passes/${id}/reject`),
-    renew: (id) => api.put(`/passes/${id}/renew`)
-};
-
-// Tickets
-export const tickets = {
-    purchase: (data) => api.post('/tickets/purchase', data),
-    getById: (id) => api.get(`/tickets/${id}`),
-    getUserTickets: (userId) => api.get(`/tickets/user/${userId}`),
-    validate: (id, busId) => api.put(`/tickets/${id}/validate`, { busId })
-};
-
 // Profile
 export const profile = {
-    get: () => api.get('/profile/profile'),
-    update: (data) => api.put('/profile/profile', data)
+    get: () => api.get('/profile'),
+    updatePhoto: (data) => api.put('/profile/photo', data),
+    requestChange: (data) => api.post('/profile/request-change', data),
+    markComplete: () => api.put('/profile/mark-complete')
 };
 
-// Buses
-export const buses = {
-    getAll: () => api.get('/buses'),
-    getById: (id) => api.get(`/buses/${id}`),
-    getLocation: (id) => api.get(`/buses/${id}/location`),
-    updateOccupancy: (id, data) => api.put(`/buses/${id}/occupancy`, data),
-    create: (data) => api.post('/buses', data),
-    update: (id, data) => api.put(`/buses/${id}`, data)
+// Passes (Student)
+export const passes = {
+    apply: (data) => api.post('/passes/apply', data),
+    getMyPasses: () => api.get('/passes/my-passes')
+};
+
+// Payment
+export const payment = {
+    createOrder: (data) => api.post('/payment/create-order', data),
+    verifyPayment: (data) => api.post('/payment/verify', data),
+    paymentFailed: (data) => api.post('/payment/failed', data)
+};
+
+// Admin - Students
+export const admin = {
+    // Student Management
+    createStudent: (data) => api.post('/admin/students', data),
+    getStudents: (params) => api.get('/admin/students', { params }),
+    getStudent: (id) => api.get(`/admin/students/${id}`),
+
+    // Profile Change Requests
+    getProfileChangeRequests: () => api.get('/admin/profile-change-requests'),
+    approveProfileChange: (studentId) => api.put(`/admin/profile-change-requests/${studentId}/approve`),
+    rejectProfileChange: (studentId, data) => api.put(`/admin/profile-change-requests/${studentId}/reject`, data),
+
+    // Pass Management
+    getPendingPasses: (params) => api.get('/passes/admin/pending', { params }),
+    getPendingPassesByRoute: () => api.get('/passes/admin/pending/by-route'),
+    getApprovedPasses: (params) => api.get('/passes/admin/approved', { params }),
+    getApprovedPassesByRoute: () => api.get('/passes/admin/approved/by-route'),
+    approvePass: (id) => api.put(`/passes/${id}/approve`),
+    rejectPass: (id, data) => api.put(`/passes/${id}/reject`, data)
 };
 
 // Routes
 export const routes = {
     getAll: () => api.get('/routes'),
-    getById: (id) => api.get(`/routes/${id}`),
-    create: (data) => api.post('/routes', data),
-    update: (id, data) => api.put(`/routes/${id}`, data),
-    delete: (id) => api.delete(`/routes/${id}`)
-};
-
-// Boarding
-export const boarding = {
-    scan: (data) => api.post('/boarding/scan', data),
-    getUserHistory: (userId) => api.get(`/boarding/history/${userId}`),
-    getAllLogs: () => api.get('/boarding/logs'),
-    getByShift: (shift) => api.get(`/boarding/shift/${shift}`)
-};
-
-// Shifts
-export const shifts = {
-    getCurrent: () => api.get('/shifts/current'),
-    getAll: () => api.get('/shifts')
+    getById: (id) => api.get(`/routes/${id}`)
 };
 
 export default api;

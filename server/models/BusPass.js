@@ -6,6 +6,8 @@ const busPassSchema = new mongoose.Schema({
         unique: true,
         required: true
     },
+
+    // Student Info (copied from profile at application time)
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -15,26 +17,33 @@ const busPassSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // Student Details (copied from profile for record-keeping)
-    studentName: String,
+    studentName: {
+        type: String,
+        required: true
+    },
     studentPhoto: String,
-    studentEmail: String,
-    studentPhone: String,
-    studentDepartment: String,
-    studentYear: Number,
+    dateOfBirth: {
+        type: Date,
+        required: true
+    },
+    mobile: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+    department: {
+        type: String,
+        required: true
+    },
+    year: {
+        type: Number,
+        required: true
+    },
 
-    passType: {
-        type: String,
-        default: 'semester'
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'approved', 'rejected', 'expired'],
-        default: 'pending'
-    },
-    qrCode: {
-        type: String
-    },
+    // Pass Details
     route: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Route',
@@ -49,15 +58,30 @@ const busPassSchema = new mongoose.Schema({
         enum: ['morning', 'afternoon'],
         required: true
     },
-    semesterCharge: {
+
+    // Status
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+    },
+    // Payment fields
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'completed', 'failed'],
+        default: 'pending'
+    },
+    paymentFailureReason: String,
+    
+    razorpayOrderId: {
+        type: String
+    },
+    razorpayPaymentId: {
+        type: String
+    },
+    amount: {
         type: Number,
-        default: 15000
-    },
-    validFrom: {
-        type: Date
-    },
-    validUntil: {
-        type: Date
+        required: true
     },
     applicationDate: {
         type: Date,
@@ -70,26 +94,13 @@ const busPassSchema = new mongoose.Schema({
     approvedAt: {
         type: Date
     },
-    rejectionReason: {
-        type: String
-    },
-    paymentStatus: {
-        type: String,
-        enum: ['pending', 'paid', 'cash'],
-        default: 'pending'
-    },
-    paymentAmount: {
-        type: Number,
-        default: 15000
-    },
-    paymentId: {
-        type: String
-    },
-    renewalHistory: [{
-        renewedAt: Date,
-        validUntil: Date,
-        paymentId: String
-    }]
+    rejectionReason: String,
+
+    // Validity (set when approved)
+    validFrom: Date,
+    validUntil: Date,
+    qrCode: String
+
 }, {
     timestamps: true
 });

@@ -2,14 +2,19 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-// Pages (to be created)
+// Student Pages
 import Login from './pages/Login';
 import StudentDashboard from './pages/StudentDashboard';
 import StudentProfile from './pages/StudentProfile';
-import AdminDashboard from './pages/AdminDashboard';
-import DriverPortal from './pages/DriverPortal';
 import ApplyPass from './pages/ApplyPass';
-import BuyTicket from './pages/BuyTicket';
+
+// Admin Pages
+import AdminDashboard from './pages/AdminDashboard';
+import StudentsManagement from './pages/StudentsManagement';
+import ProfileChanges from './pages/ProfileChanges';
+import PendingPasses from './pages/PendingPasses';
+import ApprovedPasses from './pages/ApprovedPasses';
+import AdminTransportDashboard from './pages/AdminTransportDashboard';
 
 const queryClient = new QueryClient();
 
@@ -22,7 +27,7 @@ function ProtectedRoute({ children, allowedRoles }) {
     }
 
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/" replace />;
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
@@ -37,21 +42,10 @@ function AppRoutes() {
 
     return (
         <Routes>
-            <Route path="/login" element={<Login />} />
+            {/* Login */}
+            <Route path="/" element={<Login />} />
 
-            <Route
-                path="/"
-                element={
-                    user ? (
-                        user.role === 'admin' ? <Navigate to="/admin" /> :
-                            user.role === 'driver' ? <Navigate to="/driver" /> :
-                                <Navigate to="/student" />
-                    ) : (
-                        <Navigate to="/login" />
-                    )
-                }
-            />
-
+            {/* Student Routes */}
             <Route
                 path="/student"
                 element={
@@ -79,15 +73,7 @@ function AppRoutes() {
                 }
             />
 
-            <Route
-                path="/student/buy-ticket"
-                element={
-                    <ProtectedRoute allowedRoles={['student']}>
-                        <BuyTicket />
-                    </ProtectedRoute>
-                }
-            />
-
+            {/* Admin Routes */}
             <Route
                 path="/admin"
                 element={
@@ -98,11 +84,62 @@ function AppRoutes() {
             />
 
             <Route
-                path="/driver"
+                path="/admin/students"
                 element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <DriverPortal />
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <StudentsManagement />
                     </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/profile-changes"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <ProfileChanges />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/passes/pending"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PendingPasses />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/passes/approved"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <ApprovedPasses />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* TODO: Uncomment when AdminTransportDashboard is created */}
+            {/* <Route
+                path="/admin/transport"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminTransportDashboard />
+                    </ProtectedRoute>
+                }
+            /> */}
+
+
+            {/* Catch all - redirect based on role */}
+            <Route
+                path="*"
+                element={
+                    user ? (
+                        user.role === 'admin' ? <Navigate to="/admin" /> :
+                            <Navigate to="/student" />
+                    ) : (
+                        <Navigate to="/" />
+                    )
                 }
             />
         </Routes>

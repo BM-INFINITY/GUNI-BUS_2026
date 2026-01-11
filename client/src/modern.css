@@ -922,3 +922,8 @@
         flex-direction: column;
     }
 }
+.alert-warning {
+    background: #fff9e6;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+}

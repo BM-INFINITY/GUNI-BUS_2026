@@ -34,25 +34,25 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 const authRoutes = require('./routes/auth');
-const studentRoutes = require('./routes/students');
-const passRoutes = require('./routes/passes');
-const ticketRoutes = require('./routes/tickets');
-const busRoutes = require('./routes/buses');
-const routeRoutes = require('./routes/routes');
-const boardingRoutes = require('./routes/boarding');
-const shiftRoutes = require('./routes/shifts');
 const profileRoutes = require('./routes/profile');
+const studentRoutes = require('./routes/students');
+const routeRoutes = require('./routes/routes');
+const passRoutes = require('./routes/passes');
+const adminRoutes = require('./routes/admin');
+const paymentRoutes = require('./routes/payment');
+// const attendanceRoutes = require('./routes/attendance'); // TODO: Create this file when needed
+const adminAnalyticsRoutes = require('./routes/adminAnalytics');
 
+// Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/students', studentRoutes);
-app.use('/api/passes', passRoutes);
-app.use('/api/tickets', ticketRoutes);
-app.use('/api/buses', busRoutes);
 app.use('/api/routes', routeRoutes);
-app.use('/api/boarding', boardingRoutes);
-app.use('/api/shifts', shiftRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/profile', profileRoutes);
+app.use('/api/passes', passRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/payment', paymentRoutes);
+// app.use('/api/attendance', attendanceRoutes); // TODO: Uncomment when file exists
+app.use('/api/admin/analytics', adminAnalyticsRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

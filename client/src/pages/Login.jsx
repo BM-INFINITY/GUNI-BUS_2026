@@ -18,7 +18,8 @@ export default function Login() {
         const result = await login(enrollmentNumber, password);
 
         if (result.success) {
-            navigate('/');
+            // Use redirectTo from backend
+            navigate(result.redirectTo || '/');
         } else {
             setError(result.message);
         }
@@ -29,8 +30,11 @@ export default function Login() {
     return (
         <div className="login-container">
             <div className="login-box">
-                <h1>University Bus System</h1>
-                <h2>Login</h2>
+                <h1>🚌 University Bus System</h1>
+                <h2>Student Login</h2>
+                <p style={{ color: '#666', marginBottom: '20px' }}>
+                    Login with your enrollment number and password
+                </p>
 
                 {error && <div className="error-message">{error}</div>}
 
@@ -43,6 +47,7 @@ export default function Login() {
                             onChange={(e) => setEnrollmentNumber(e.target.value)}
                             required
                             placeholder="Enter your enrollment number"
+                            autoFocus
                         />
                     </div>
 
@@ -57,10 +62,14 @@ export default function Login() {
                         />
                     </div>
 
-                    <button type="submit" disabled={loading}>
+                    <button type="submit" disabled={loading} className="primary-btn">
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
+
+                <p style={{ marginTop: '20px', fontSize: '0.9rem', color: '#666' }}>
+                    ℹ️ First time? You'll be redirected to complete your profile
+                </p>
             </div>
         </div>
     );

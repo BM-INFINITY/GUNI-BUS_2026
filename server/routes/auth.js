@@ -35,6 +35,20 @@ router.post('/login', async (req, res) => {
             { expiresIn: '7d' }
         );
 
+        // Determine redirect path based on role and profile status
+        let redirectTo = '/';
+
+        if (user.role === 'admin') {
+            redirectTo = '/admin';
+        } else if (user.role === 'student') {
+            // First time login or profile incomplete -> redirect to profile
+            if (!user.hasCompletedProfileOnce || !user.isProfileComplete) {
+                redirectTo = '/student/profile';
+            } else {
+                redirectTo = '/student';
+            }
+        }
+
         res.json({
             token,
             user: {
@@ -44,8 +58,15 @@ router.post('/login', async (req, res) => {
                 enrollmentNumber: user.enrollmentNumber,
                 role: user.role,
                 department: user.department,
-                year: user.year
-            }
+                year: user.year,
+                mobile: user.mobile,
+                dateOfBirth: user.dateOfBirth,
+                profilePhoto: user.profilePhoto,
+                isProfileComplete: user.isProfileComplete,
+                hasCompletedProfileOnce: user.hasCompletedProfileOnce,
+                profileChangeRequest: user.profileChangeRequest
+            },
+            redirectTo
         });
     } catch (error) {
         console.error('Login error:', error);

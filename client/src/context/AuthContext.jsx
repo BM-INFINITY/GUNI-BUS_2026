@@ -18,13 +18,13 @@ export const AuthProvider = ({ children }) => {
     const login = async (enrollmentNumber, password) => {
         try {
             const response = await authAPI.login(enrollmentNumber, password);
-            const { token, user } = response.data;
+            const { token, user, redirectTo } = response.data;
 
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
             setUser(user);
 
-            return { success: true };
+            return { success: true, redirectTo };
         } catch (error) {
             return {
                 success: false,
@@ -45,15 +45,21 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateUser = (updatedUserData) => {
+        const newUserData = { ...user, ...updatedUserData };
+        localStorage.setItem('user', JSON.stringify(newUserData));
+        setUser(newUserData);
+    };
+
     const value = {
         user,
         login,
         logout,
+        updateUser,
         loading,
         isAuthenticated: !!user,
         isStudent: user?.role === 'student',
-        isAdmin: user?.role === 'admin',
-        isDriver: user?.role === 'driver'
+        isAdmin: user?.role === 'admin'
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

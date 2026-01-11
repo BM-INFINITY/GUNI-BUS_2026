@@ -9,9 +9,13 @@ export default function StudentDashboard() {
     const [userPasses, setUserPasses] = useState([]);
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [showPassModal, setShowPassModal] = useState(false);
 
     useEffect(() => {
+        if (user && !user.isProfileComplete) {
+            navigate('/student/profile');
+            return;
+        }
         fetchData();
     }, [user]);
 
@@ -19,7 +23,7 @@ export default function StudentDashboard() {
         try {
             const [profileRes, passesRes] = await Promise.all([
                 profile.get(),
-                passes.getUserPasses(user.id)
+                passes.getMyPasses()
             ]);
 
             setProfileData(profileRes.data);
@@ -32,223 +36,163 @@ export default function StudentDashboard() {
     };
 
     const activePass = userPasses.find(p => p.status === 'approved');
-    const pendingPass = userPasses.find(p => p.status === 'pending');
-    const rejectedPass = userPasses.find(p => p.status === 'rejected');
+    const pendingPass = userPasses.find(p => p.status === 'pending' && p.paymentStatus === 'pending');
+    const failedPass = userPasses.find(p => p.paymentStatus === 'failed');
+
+    if (loading) {
+        return <div className="loading">Loading...</div>;
+    }
 
     return (
         <div className="dashboard modern-dashboard">
-            {/* Enhanced Header */}
+
+            {/* Header */}
             <header className="modern-header">
                 <div className="header-content">
                     <div className="header-left">
-                        <h1>🚌 GUNI Bus Pass</h1>
+                        <h1>🚌 University Bus System</h1>
                         <span className="user-badge">Student Portal</span>
                     </div>
                     <div className="header-right">
-                        <div className="profile-section">
-                            <button
-                                className="profile-button"
-                                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                            >
-                                <div className="profile-avatar">
-                                    {profileData?.profilePhoto ? (
-                                        <img src={profileData.profilePhoto} alt="Profile" />
-                                    ) : (
-                                        <span>👤</span>
-                                    )}
-                                </div>
-                                <div className="profile-info">
-                                    <span className="profile-name">{profileData?.name || user?.name}</span>
-                                    <span className="profile-status">
-                                        {profileData?.isProfileComplete ? '✓ Complete' : '⏳ Incomplete'}
-                                    </span>
-                                </div>
-                                <span className="dropdown-arrow">▼</span>
-                            </button>
-
-                            {showProfileMenu && (
-                                <div className="profile-dropdown">
-                                    <button onClick={() => { navigate('/student/profile'); setShowProfileMenu(false); }}>
-                                        <span>👤</span> My Profile
-                                    </button>
-                                    <button onClick={() => { navigate('/student/history'); setShowProfileMenu(false); }}>
-                                        <span>📋</span> Boarding History
-                                    </button>
-                                    <button onClick={logout} className="logout-btn">
-                                        <span>🚪</span> Logout
-                                    </button>
-                                </div>
+                        <div className="profile-avatar">
+                            {profileData?.profilePhoto ? (
+                                <img
+                                    src={profileData.profilePhoto}
+                                    alt="Profile"
+                                    style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <span>👤</span>
                             )}
                         </div>
+                        <span style={{ marginRight: '15px' }}>{profileData?.name || user?.name}</span>
+                        <button className="secondary-btn" onClick={() => navigate('/student/profile')}>
+                            Profile
+                        </button>
+                        <button className="secondary-btn" onClick={logout}>
+                            Logout
+                        </button>
                     </div>
                 </div>
             </header>
 
             <div className="dashboard-content modern-content">
-                {/* Quick Stats */}
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <div className="stat-icon">🎫</div>
-                        <div className="stat-info">
-                            <h3>{activePass ? 'Active' : pendingPass ? 'Pending' : 'No Pass'}</h3>
-                            <p>Pass Status</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon">📍</div>
-                        <div className="stat-info">
-                            <h3>{activePass?.selectedStop || '—'}</h3>
-                            <p>Boarding Stop</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon">⏰</div>
-                        <div className="stat-info">
-                            <h3>{activePass?.shift === 'morning' ? 'Morning' : activePass?.shift === 'afternoon' ? 'Afternoon' : '—'}</h3>
-                            <p>Shift</p>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon">👤</div>
-                        <div className="stat-info">
-                            <h3>{profileData?.isProfileComplete ? 'Complete' : 'Incomplete'}</h3>
-                            <p>Profile</p>
-                        </div>
-                    </div>
+
+                {/* Welcome Card */}
+                <div className="card modern-card">
+                    <h2>Welcome back, {profileData?.name}!</h2>
+                    <p>
+                        Enrollment: {user?.enrollmentNumber} | Department: {profileData?.department} | Year: {profileData?.year}
+                    </p>
                 </div>
 
-                {/* Main Content */}
-                <div className="main-grid">
-                    {/* Active/Pending Pass */}
-                    {loading ? (
-                        <div className="card modern-card">
-                            <div className="loading-spinner">Loading...</div>
-                        </div>
-                    ) : activePass ? (
-                        <div className="card modern-card active-pass-card">
-                            <div className="card-header">
-                                <h2>✅ Active Bus Pass</h2>
-                                <div className="reference-badge-large">{activePass.referenceNumber}</div>
-                            </div>
-                            <div className="pass-details-grid">
-                                <div className="detail-item">
-                                    <span className="detail-icon">🚌</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Route</span>
-                                        <span className="detail-value">{activePass.route?.routeName}</span>
-                                    </div>
-                                </div>
-                                <div className="detail-item">
-                                    <span className="detail-icon">📍</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Stop</span>
-                                        <span className="detail-value">{activePass.selectedStop}</span>
-                                    </div>
-                                </div>
-                                <div className="detail-item">
-                                    <span className="detail-icon">⏰</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Shift</span>
-                                        <span className="detail-value">
-                                            {activePass.shift === 'morning' ? '🌅 Morning (8:30-2:10)' : '🌆 Afternoon (11:40-5:20)'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="detail-item">
-                                    <span className="detail-icon">📅</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Valid Until</span>
-                                        <span className="detail-value">{new Date(activePass.validUntil).toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                                <div className="detail-item charge-item">
-                                    <span className="detail-icon">💰</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Semester Charge</span>
-                                        <span className="detail-value price">₹{activePass.semesterCharge?.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <button className="primary-btn" onClick={() => navigate('/student/view-pass')}>
-                                <span>📱</span> View QR Code
-                            </button>
-                        </div>
-                    ) : pendingPass ? (
-                        <div className="card modern-card pending-card">
-                            <div className="card-header">
-                                <h2>⏳ Application Pending</h2>
-                                <div className="reference-badge-large">{pendingPass.referenceNumber}</div>
-                            </div>
-                            <p className="pending-message">Your application is awaiting admin approval</p>
-                            <div className="pass-details-grid">
-                                <div className="detail-item">
-                                    <span className="detail-icon">🚌</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Route</span>
-                                        <span className="detail-value">{pendingPass.route?.routeName}</span>
-                                    </div>
-                                </div>
-                                <div className="detail-item">
-                                    <span className="detail-icon">📍</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Stop</span>
-                                        <span className="detail-value">{pendingPass.selectedStop}</span>
-                                    </div>
-                                </div>
-                                <div className="detail-item">
-                                    <span className="detail-icon">📅</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Applied</span>
-                                        <span className="detail-value">{new Date(pendingPass.applicationDate).toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                                <div className="detail-item charge-item">
-                                    <span className="detail-icon">💰</span>
-                                    <div className="detail-content">
-                                        <span className="detail-label">Charge</span>
-                                        <span className="detail-value price">₹{pendingPass.semesterCharge?.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="card modern-card apply-card">
-                            <div className="card-header">
-                                <h2>🎫 Apply for Bus Pass</h2>
-                            </div>
-                            <p>Get your semester bus pass and travel hassle-free!</p>
-                            <ul className="benefits-list">
-                                <li>✓ Valid for 6 months</li>
-                                <li>✓ Daily unlimited travel</li>
-                                <li>✓ Choose your route & stop</li>
-                                <li>✓ Digital QR code pass</li>
-                            </ul>
-                            <button className="primary-btn large" onClick={() => navigate('/student/apply-pass')}>
-                                <span>📝</span> Apply Now
-                            </button>
-                        </div>
-                    )}
+                {/* Active Pass */}
+                {activePass ? (
+                    <>
+                        {/* Pass Preview Card */}
+                        <div className="card modern-card" style={{ background: '#ecfeff', borderLeft: '4px solid #06b6d4' }}>
+                            <h2>🎫 Active Bus Pass</h2>
 
-                    {/* Quick Actions */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px' }}>
+                                <div>
+                                    <p><strong>Name:</strong> {profileData.name}</p>
+                                    <p><strong>Enrollment:</strong> {user.enrollmentNumber}</p>
+                                    <p><strong>Route:</strong> {activePass.route?.routeName}</p>
+                                    <p><strong>Stop:</strong> {activePass.selectedStop}</p>
+                                    <p><strong>Shift:</strong> {activePass.shift === 'morning' ? 'Morning' : 'Afternoon'}</p>
+                                </div>
+
+                                <div style={{ textAlign: 'center' }}>
+                                    <img src={activePass.qrCode} width="120" alt="QR" />
+                                    <p style={{ fontSize: '0.8rem' }}>Scan for verification</p>
+                                </div>
+                            </div>
+
+                            <button
+                                className="primary-btn"
+                                style={{ marginTop: '15px' }}
+                                onClick={() => setShowPassModal(true)}
+                            >
+                                View Full Pass
+                            </button>
+                        </div>
+
+                        {/* Pass Modal */}
+                        {showPassModal && (
+                            <div className="modal-overlay" onClick={() => setShowPassModal(false)}>
+                                <div
+                                    className="modal-box"
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ maxWidth: '500px' }}
+                                >
+                                    <h2 style={{ textAlign: 'center' }}>🚌 University Bus Pass</h2>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '20px', marginTop: '20px' }}>
+                                        <img
+                                            src={profileData.profilePhoto}
+                                            alt="Student"
+                                            style={{ width: '120px', height: '120px', borderRadius: '12px', objectFit: 'cover' }}
+                                        />
+
+                                        <div>
+                                            <p><strong>Name:</strong> {profileData.name}</p>
+                                            <p><strong>Enrollment:</strong> {user.enrollmentNumber}</p>
+                                            <p><strong>Department:</strong> {profileData.department}</p>
+                                            <p><strong>Year:</strong> {profileData.year}</p>
+                                            <p><strong>Mobile:</strong> {profileData.mobile}</p>
+                                        </div>
+                                    </div>
+
+                                    <hr />
+
+                                    <p><strong>Pass Ref:</strong> {activePass.referenceNumber}</p>
+                                    <p><strong>Route:</strong> {activePass.route?.routeName}</p>
+                                    <p><strong>Boarding Stop:</strong> {activePass.selectedStop}</p>
+                                    <p><strong>Shift:</strong> {activePass.shift}</p>
+                                    <p><strong>Valid Till:</strong> {new Date(activePass.validUntil).toLocaleDateString()}</p>
+
+                                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                                        <img src={activePass.qrCode} width="250" alt="QR" />
+                                        <p>Scan at bus entry</p>
+                                    </div>
+
+                                    <button
+                                        className="secondary-btn"
+                                        style={{ marginTop: '15px', width: '100%' }}
+                                        onClick={() => setShowPassModal(false)}
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : failedPass ? (
+                    <div className="card modern-card" style={{ background: '#fee2e2', borderLeft: '4px solid #dc2626' }}>
+                        <h2>❌ Payment Failed</h2>
+                        <p>Your payment was not completed.</p>
+                        <p><strong>Reason:</strong> {failedPass.paymentFailureReason || 'Payment was cancelled or failed'}</p>
+                        <button className="primary-btn" onClick={() => navigate('/student/apply-pass')}>
+                            Retry Payment
+                        </button>
+                    </div>
+                ) : pendingPass ? (
+                    <div className="card modern-card" style={{ background: '#fff3cd', borderLeft: '4px solid #ffc107' }}>
+                        <h2>⏳ Payment Pending</h2>
+                        <p>Your payment is not completed yet. Please complete the payment.</p>
+                        <button className="primary-btn" onClick={() => navigate('/student/apply-pass')}>
+                            Complete Payment
+                        </button>
+                    </div>
+                ) : (
                     <div className="card modern-card">
-                        <h3>Quick Actions</h3>
-                        <div className="actions-grid">
-                            <button className="action-btn" onClick={() => navigate('/student/buy-ticket')}>
-                                <span className="action-icon">🎟️</span>
-                                <span className="action-text">Buy Day Ticket</span>
-                                <span className="action-price">₹50</span>
-                            </button>
-                            <button className="action-btn" onClick={() => navigate('/student/history')}>
-                                <span className="action-icon">📋</span>
-                                <span className="action-text">View History</span>
-                            </button>
-                            <button className="action-btn" onClick={() => navigate('/student/profile')}>
-                                <span className="action-icon">👤</span>
-                                <span className="action-text">Edit Profile</span>
-                            </button>
-                        </div>
+                        <h2>🎫 Apply for Bus Pass</h2>
+                        <p>Get your semester bus pass for hassle-free daily travel</p>
+                        <button className="primary-btn large" onClick={() => navigate('/student/apply-pass')}>
+                            Apply Now
+                        </button>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
