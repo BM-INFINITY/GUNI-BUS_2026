@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import axios from 'axios';
 import './ScanPass.css';
 
@@ -17,77 +17,84 @@ export default function ScanPass() {
     const [error, setError] = useState('');
     const [processing, setProcessing] = useState(false);
     const [endingTrip, setEndingTrip] = useState(false);
+    const [cameraPermission, setCameraPermission] = useState(null); // 'granted', 'denied', 'prompt'
 
     // Track active TripType in Ref for scanner callback
     const tripTypeRef = useRef(tripType);
-
     const isCooldownRef = useRef(false);
-    const scannerRef = useRef(null);
+    const html5QrCodeRef = useRef(null);
 
     useEffect(() => {
         tripTypeRef.current = tripType;
     }, [tripType]);
 
     useEffect(() => {
-        startScanner();
-        return () => {
-            if (scannerRef.current) {
+        const initScanner = async () => {
+            // Cleanup previous instance if exists
+            if (html5QrCodeRef.current) {
                 try {
-                    scannerRef.current.clear().catch(console.error);
+                    if (html5QrCodeRef.current.isScanning) {
+                        await html5QrCodeRef.current.stop();
+                    }
+                    html5QrCodeRef.current.clear();
+                } catch (e) {
+                    console.error("Cleanup error", e);
+                }
+            }
+
+            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCodeRef.current = html5QrCode;
+
+            try {
+                // Check cameras
+                const devices = await Html5Qrcode.getCameras();
+                if (devices && devices.length) {
+                    setCameraPermission('granted');
+
+                    // Start Camera
+                    await html5QrCode.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0
+                        },
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                } else {
+                    setError("No cameras found.");
+                }
+            } catch (err) {
+                console.error("Camera Init Error:", err);
+                setCameraPermission('denied');
+                setError("Camera permission denied or not available.");
+            }
+        };
+
+        initScanner();
+
+        return () => {
+            if (html5QrCodeRef.current) {
+                try {
+                    html5QrCodeRef.current.stop().then(() => {
+                        html5QrCodeRef.current.clear();
+                    }).catch(() => { });
                 } catch (e) { }
             }
         };
     }, []);
 
-    const startScanner = async () => {
-        if (scannerRef.current) {
-            try {
-                await scannerRef.current.clear();
-            } catch (e) { }
-        }
-
-        const scanner = new Html5QrcodeScanner(
-            "reader",
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0,
-                showTorchButtonIfSupported: true,
-                videoConstraints: {
-                    facingMode: "environment"
-                }
-            },
-            false
-        );
-
-        scannerRef.current = scanner;
-
-        try {
-            // Note: Html5QrcodeScanner.render() is not async but it might throw synchronously
-            scanner.render(onScanSuccess, (error) => {
-                // Ignore minor scanning errors (frame didn't have QR)
-                // But logging unique errors might help debugging
-                if (typeof error === 'string' && !error.includes("No MultiFormat Readers")) {
-                    console.warn(error);
-                }
-            });
-        } catch (e) {
-            console.error("Camera start error:", e);
-            setError("Camera failed to start. Please check permissions.");
-        }
-    };
-
     const onScanSuccess = async (decodedText, decodedResult) => {
         if (isCooldownRef.current) return;
-
+        // ... (Logic remains same) ...
         isCooldownRef.current = true;
         setProcessing(true);
 
         try {
             const token = localStorage.getItem('token');
-            const currentTripType = tripTypeRef.current; // Get dynamic ref value
+            const currentTripType = tripTypeRef.current;
 
-            // Send 'tripType' (pickup/drop) to backend
             const res = await axios.post(
                 `${API_URL}/admin/scanpassRoute/scan-pass`,
                 { qrData: decodedText, tripType: currentTripType },
@@ -130,10 +137,12 @@ export default function ScanPass() {
         }
     };
 
-    const onScanFailure = (err) => { };
+    const onScanFailure = (err) => {
+        // console.warn(err);
+    };
 
     const handleEndTrip = async () => {
-        if (!confirm(`End Trip? This resets your bus occupancy to 0.`)) return;
+        if (!window.confirm(`End Trip ? This resets your bus occupancy to 0.`)) return;
 
         setEndingTrip(true);
         try {
@@ -213,11 +222,21 @@ export default function ScanPass() {
                                     <span>Verifying...</span>
                                 </div>
                             )}
+
+                            {error && error.includes("permission") && (
+                                <div className="permission-retry-overlay">
+                                    <p>{error}</p>
+                                    <button onClick={() => window.location.reload()} className="retry-btn">
+                                        Retry Camera
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div className="live-result-zone">
-                        {error && (
+                        {/* ... Error & Result Display ... */}
+                        {error && !error.includes("permission") && (
                             <div className="result-flash error animate-pop-in">
                                 <div className="flash-icon">
                                     {error.includes("Valid for") ? '🚫' : '❌'}
