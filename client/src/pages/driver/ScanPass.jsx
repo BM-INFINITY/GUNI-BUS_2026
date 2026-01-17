@@ -39,10 +39,10 @@ export default function ScanPass() {
         };
     }, []);
 
-    const startScanner = () => {
+    const startScanner = async () => {
         if (scannerRef.current) {
             try {
-                scannerRef.current.clear().catch(() => { });
+                await scannerRef.current.clear();
             } catch (e) { }
         }
 
@@ -50,15 +50,31 @@ export default function ScanPass() {
             "reader",
             {
                 fps: 10,
-                qrbox: { width: 220, height: 220 },
+                qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0,
-                showTorchButtonIfSupported: true
+                showTorchButtonIfSupported: true,
+                videoConstraints: {
+                    facingMode: "environment"
+                }
             },
             false
         );
 
         scannerRef.current = scanner;
-        scanner.render(onScanSuccess, onScanFailure);
+
+        try {
+            // Note: Html5QrcodeScanner.render() is not async but it might throw synchronously
+            scanner.render(onScanSuccess, (error) => {
+                // Ignore minor scanning errors (frame didn't have QR)
+                // But logging unique errors might help debugging
+                if (typeof error === 'string' && !error.includes("No MultiFormat Readers")) {
+                    console.warn(error);
+                }
+            });
+        } catch (e) {
+            console.error("Camera start error:", e);
+            setError("Camera failed to start. Please check permissions.");
+        }
     };
 
     const onScanSuccess = async (decodedText, decodedResult) => {
