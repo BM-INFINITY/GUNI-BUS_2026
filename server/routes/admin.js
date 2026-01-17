@@ -6,9 +6,127 @@ const User = require('../models/User');
 const BusPass = require('../models/BusPass');
 const DailyAttendance = require('../models/DailyAttendance');
 const Bus = require('../models/Bus');
+const multer = require('multer');
+const csv = require('csv-parser');
+const { Readable } = require('stream');
+
+// Configure Multer (Memory Storage)
+const upload = multer({ storage: multer.memoryStorage() });
+
+function parseExcelDate(value) {
+    if (!value) return null;
+
+    // If already valid ISO date
+    if (typeof value === "string" && !isNaN(Date.parse(value))) {
+        return new Date(value);
+    }
+
+    // If Excel serial number
+    if (!isNaN(value)) {
+        const excelEpoch = new Date(1899, 11, 30);
+        return new Date(excelEpoch.getTime() + value * 86400000);
+    }
+
+    return null;
+}
 
 // Create new student (Admin only)
-router.post('/students', auth, isAdmin, async (req, res) => {
+// Bulk Upload Students (CSV)
+router.post('/students/upload', auth, isAdmin, upload.single('file'), async(req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const results = [];
+        const stream = Readable.from(req.file.buffer);
+
+        stream
+            .pipe(csv())
+            .on('data', (data) => results.push(data))
+            .on('end', async() => {
+                let successCount = 0;
+                let failCount = 0;
+                const errors = [];
+
+                for (const row of results) {
+                    try {
+                        // Extract fields (adjust keys based on CSV headers)
+                        // Expected: enrollmentNumber, name, email, mobile, department, year, dateOfBirth
+                        const {
+                            enrollmentNumber,
+                            name,
+                            email,
+                            mobile,
+                            department,
+                            year,
+                            dateOfBirth
+                        } = row;
+
+                        if (!enrollmentNumber || !email) {
+                            failCount++;
+                            errors.push(`Missing required fields for row: ${JSON.stringify(row)}`);
+                            continue;
+                        }
+
+                        // Check existence
+                        const existing = await User.findOne({
+                            $or: [{ enrollmentNumber }, { email }]
+                        });
+
+                        if (existing) {
+                            failCount++;
+                            errors.push(`Student exists: ${enrollmentNumber}`);
+                            continue;
+                        }
+
+                        // Create Student
+                        const salt = await bcrypt.genSalt(10);
+                        // Default password is 123
+                        const def_pass = '123'
+                        const hashedPassword = await bcrypt.hash(def_pass, salt);
+
+                        const newStudent = new User({
+                            enrollmentNumber,
+                            password: hashedPassword,
+                            name,
+                            email,
+                            mobile: mobile || '0000000000',
+                            department: department || 'General',
+                            year: year ? parseInt(year) : 1,
+                            dateOfBirth: parseExcelDate(dateOfBirth) || new Date(),
+                            role: 'student',
+                            isProfileComplete: false
+                        });
+
+                        await newStudent.save();
+                        successCount++;
+
+                    } catch (err) {
+                        failCount++;
+                        errors.push(`Error adding ${row.enrollmentNumber}: ${err.message}`);
+                    }
+                }
+
+                res.json({
+                    message: 'Bulk upload processed',
+                    summary: {
+                        total: results.length,
+                        success: successCount,
+                        failed: failCount,
+                        errors
+                    }
+                });
+            });
+
+    } catch (error) {
+        console.error('Bulk upload error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Create new student (Admin only - Single)
+router.post('/students', auth, isAdmin, async(req, res) => {
     try {
         const {
             enrollmentNumber,
@@ -72,44 +190,98 @@ router.post('/students', auth, isAdmin, async (req, res) => {
 });
 
 // Get all students (Admin only)
-router.get('/students', auth, isAdmin, async (req, res) => {
+// Get all students (Admin only) - Enhanced with Filters
+router.get('/students', auth, isAdmin, async(req, res) => {
     try {
-        const { search, department, year, page = 1, limit = 20 } = req.query;
+        const { search, department, year, routeId, shift, page = 1, limit = 20 } = req.query;
 
-        const query = { role: 'student' };
+        const pipeline = [
+            { $match: { role: 'student' } },
 
-        // Search by enrollment or name
+            // Lookup active bus pass to get route/shift info
+            {
+                $lookup: {
+                    from: 'buspasses',
+                    let: { userId: '$_id' },
+                    pipeline: [{
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$userId', '$$userId'] },
+                                        { $eq: ['$status', 'approved'] }
+                                    ]
+                                }
+                            }
+                        },
+                        { $limit: 1 } // Only need the most recent active pass
+                    ],
+                    as: 'activePass'
+                }
+            },
+            { $unwind: { path: '$activePass', preserveNullAndEmptyArrays: true } }
+        ];
+
+        // Search Filters
         if (search) {
-            query.$or = [
-                { enrollmentNumber: { $regex: search, $options: 'i' } },
-                { name: { $regex: search, $options: 'i' } }
-            ];
+            pipeline.push({
+                $match: {
+                    $or: [
+                        { enrollmentNumber: { $regex: search, $options: 'i' } },
+                        { name: { $regex: search, $options: 'i' } }
+                    ]
+                }
+            });
         }
 
-        // Filter by department
-        if (department) {
-            query.department = department;
+        if (department) pipeline.push({ $match: { department } });
+        if (year) pipeline.push({ $match: { year: parseInt(year) } });
+
+        // Advanced Filters (depend on Active Pass)
+        if (routeId) {
+            const mongoose = require('mongoose');
+            pipeline.push({
+                $match: { 'activePass.route': new mongoose.Types.ObjectId(routeId) }
+            });
         }
 
-        // Filter by year
-        if (year) {
-            query.year = parseInt(year);
+        if (shift) {
+            pipeline.push({
+                $match: { 'activePass.shift': shift }
+            });
         }
 
-        const students = await User.find(query)
-            .select('-password')
-            .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
+        // Pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
 
-        const count = await User.countDocuments(query);
+        // Count total matching
+        const countPipeline = [...pipeline, { $count: 'total' }];
+        const countResult = await User.aggregate(countPipeline);
+        const totalStudents = countResult.length > 0 ? countResult[0].total : 0;
+
+        // Apply sort and pagination to main pipeline
+        pipeline.push({ $sort: { createdAt: -1 } });
+        pipeline.push({ $skip: skip });
+        pipeline.push({ $limit: parseInt(limit) });
+
+        // Project final shape
+        pipeline.push({
+            $project: {
+                password: 0,
+                __v: 0,
+                'activePass.userId': 0,
+                'activePass.__v': 0
+            }
+        });
+
+        const students = await User.aggregate(pipeline);
 
         res.json({
             students,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-            totalStudents: count
+            totalPages: Math.ceil(totalStudents / limit),
+            currentPage: parseInt(page),
+            totalStudents
         });
+
     } catch (error) {
         console.error('Get students error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -117,7 +289,8 @@ router.get('/students', auth, isAdmin, async (req, res) => {
 });
 
 // Get student details (Admin only)
-router.get('/students/:id', auth, isAdmin, async (req, res) => {
+// Get student details (Admin only) - Enhanced with Logs
+router.get('/students/:id', auth, isAdmin, async(req, res) => {
     try {
         const student = await User.findById(req.params.id).select('-password');
 
@@ -130,9 +303,16 @@ router.get('/students/:id', auth, isAdmin, async (req, res) => {
             .populate('route', 'routeName routeNumber')
             .sort({ createdAt: -1 });
 
+        // Get recent attendance logs
+        const attendanceLogs = await DailyAttendance.find({ userId: req.params.id })
+            .populate('routeId', 'routeName routeNumber')
+            .sort({ date: -1, checkInTime: -1 })
+            .limit(50);
+
         res.json({
             student,
-            passes
+            passes,
+            attendanceLogs
         });
     } catch (error) {
         console.error('Get student details error:', error);
@@ -141,7 +321,7 @@ router.get('/students/:id', auth, isAdmin, async (req, res) => {
 });
 
 // Get all profile change requests (Admin only)
-router.get('/profile-change-requests', auth, isAdmin, async (req, res) => {
+router.get('/profile-change-requests', auth, isAdmin, async(req, res) => {
     try {
         const students = await User.find({
             role: 'student',
@@ -173,7 +353,7 @@ router.get('/profile-change-requests', auth, isAdmin, async (req, res) => {
 });
 
 // Approve profile change request (Admin only)
-router.put('/profile-change-requests/:studentId/approve', auth, isAdmin, async (req, res) => {
+router.put('/profile-change-requests/:studentId/approve', auth, isAdmin, async(req, res) => {
     try {
         const student = await User.findById(req.params.studentId);
 
@@ -221,7 +401,7 @@ router.put('/profile-change-requests/:studentId/approve', auth, isAdmin, async (
 });
 
 // Reject profile change request (Admin only)
-router.put('/profile-change-requests/:studentId/reject', auth, isAdmin, async (req, res) => {
+router.put('/profile-change-requests/:studentId/reject', auth, isAdmin, async(req, res) => {
     try {
         const { rejectionReason } = req.body;
 
@@ -263,7 +443,7 @@ router.put('/profile-change-requests/:studentId/reject', auth, isAdmin, async (r
 });
 
 // Get today's attendance by route
-router.get('/today-attendance', auth, isAdmin, async (req, res) => {
+router.get('/today-attendance', auth, isAdmin, async(req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
 
@@ -284,12 +464,12 @@ router.get('/today-attendance', auth, isAdmin, async (req, res) => {
 
         // Populate route details
         const populatedData = await Promise.all(
-            data.map(async (item) => {
+            data.map(async(item) => {
                 const route = await require('../models/Route').findById(item._id);
                 return {
                     ...item,
-                    routeName: route?.routeName,
-                    routeNumber: route?.routeNumber
+                    routeName: route.routeName,
+                    routeNumber: route.routeNumber
                 };
             })
         );
@@ -306,7 +486,7 @@ router.get('/today-attendance', auth, isAdmin, async (req, res) => {
 // ===============================
 
 // Create new bus
-router.post('/buses', auth, isAdmin, async (req, res) => {
+router.post('/buses', auth, isAdmin, async(req, res) => {
     try {
         const {
             busNumber,
@@ -345,7 +525,7 @@ router.post('/buses', auth, isAdmin, async (req, res) => {
 });
 
 // Get all buses
-router.get('/buses', auth, isAdmin, async (req, res) => {
+router.get('/buses', auth, isAdmin, async(req, res) => {
     try {
         const buses = await Bus.find()
             .populate('assignedDriver', 'name mobile')
@@ -359,12 +539,11 @@ router.get('/buses', auth, isAdmin, async (req, res) => {
 });
 
 // Update bus
-router.put('/buses/:id', auth, isAdmin, async (req, res) => {
+router.put('/buses/:id', auth, isAdmin, async(req, res) => {
     try {
         const updatedBus = await Bus.findByIdAndUpdate(
             req.params.id,
-            req.body,
-            { new: true, runValidators: true }
+            req.body, { new: true, runValidators: true }
         );
         if (!updatedBus) return res.status(404).json({ message: 'Bus not found' });
         res.json({ message: 'Bus updated successfully', bus: updatedBus });
@@ -375,7 +554,7 @@ router.put('/buses/:id', auth, isAdmin, async (req, res) => {
 });
 
 // Delete bus (Soft delete)
-router.delete('/buses/:id', auth, isAdmin, async (req, res) => {
+router.delete('/buses/:id', auth, isAdmin, async(req, res) => {
     try {
         const bus = await Bus.findById(req.params.id);
         if (!bus) return res.status(404).json({ message: 'Bus not found' });
@@ -396,7 +575,7 @@ router.delete('/buses/:id', auth, isAdmin, async (req, res) => {
 // ===============================
 
 // Create new driver
-router.post('/drivers', auth, isAdmin, async (req, res) => {
+router.post('/drivers', auth, isAdmin, async(req, res) => {
     try {
         const {
             name,
@@ -444,7 +623,7 @@ router.post('/drivers', auth, isAdmin, async (req, res) => {
 });
 
 // Get all drivers
-router.get('/drivers', auth, isAdmin, async (req, res) => {
+router.get('/drivers', auth, isAdmin, async(req, res) => {
     try {
         const drivers = await User.find({ role: 'driver' })
             .select('-password')
@@ -459,14 +638,13 @@ router.get('/drivers', auth, isAdmin, async (req, res) => {
 });
 
 // Update driver & assignments
-router.put('/drivers/:id', auth, isAdmin, async (req, res) => {
+router.put('/drivers/:id', auth, isAdmin, async(req, res) => {
     try {
         const { assignedBus, ...updateData } = req.body;
 
         const driver = await User.findByIdAndUpdate(
             req.params.id,
-            updateData,
-            { new: true }
+            updateData, { new: true }
         ).select('-password');
 
         if (!driver) return res.status(404).json({ message: 'Driver not found' });

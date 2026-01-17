@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL =
+    import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -27,7 +28,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        if (error.response.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/';
@@ -80,6 +81,11 @@ export const routes = {
 export const admin = {
     // Students
     getStudents: (params) => api.get('/admin/students', { params }),
+    getStudentDetails: (id) => api.get(`/admin/students/${id}`),
+    createStudent: (data) => api.post('/admin/students', data),
+    uploadStudents: (data) => api.post('/admin/students/upload', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 
     // Profile change requests
     getProfileChangeRequests: () => api.get('/admin/profile-change-requests'),

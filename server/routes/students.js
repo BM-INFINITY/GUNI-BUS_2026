@@ -5,7 +5,7 @@ const User = require('../models/User');
 const { auth, isAdmin } = require('../middleware/auth');
 
 // Create student account (Admin only)
-router.post('/', auth, isAdmin, async (req, res) => {
+router.post('/', auth, isAdmin, async(req, res) => {
     try {
         const { name, email, enrollmentNumber, password, phone, department, year, role } = req.body;
 
@@ -21,6 +21,7 @@ router.post('/', auth, isAdmin, async (req, res) => {
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
+
 
         // Create new user
         const user = new User({
@@ -53,7 +54,7 @@ router.post('/', auth, isAdmin, async (req, res) => {
 });
 
 // Get all students (Admin only)
-router.get('/', auth, isAdmin, async (req, res) => {
+router.get('/', auth, isAdmin, async(req, res) => {
     try {
         const students = await User.find({ role: 'student' }).select('-password');
         res.json(students);
@@ -64,7 +65,7 @@ router.get('/', auth, isAdmin, async (req, res) => {
 });
 
 // Get student by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, async(req, res) => {
     try {
         const student = await User.findById(req.params.id).select('-password');
 
@@ -80,14 +81,12 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Update student (Admin only)
-router.put('/:id', auth, isAdmin, async (req, res) => {
+router.put('/:id', auth, isAdmin, async(req, res) => {
     try {
         const { name, email, phone, department, year, isActive } = req.body;
 
         const student = await User.findByIdAndUpdate(
-            req.params.id,
-            { name, email, phone, department, year, isActive },
-            { new: true, runValidators: true }
+            req.params.id, { name, email, phone, department, year, isActive }, { new: true, runValidators: true }
         ).select('-password');
 
         if (!student) {
@@ -102,7 +101,7 @@ router.put('/:id', auth, isAdmin, async (req, res) => {
 });
 
 // Delete student (Admin only)
-router.delete('/:id', auth, isAdmin, async (req, res) => {
+router.delete('/:id', auth, isAdmin, async(req, res) => {
     try {
         const student = await User.findByIdAndDelete(req.params.id);
 

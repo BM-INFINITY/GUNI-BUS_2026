@@ -252,8 +252,8 @@ export default function StudentProfile() {
                             )}
                         </div>
 
-                        <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading} />
-                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Max 2MB</p>
+                        <input type="file" accept="image/jpeg, image/jpg, image/png" onChange={handlePhotoUpload} disabled={uploading} />
+                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Only JPG, JPEG, and PNG images are allowed.Max 2MB</p>
                     </div>
                 </div>
             </div>
