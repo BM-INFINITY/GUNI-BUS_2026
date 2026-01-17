@@ -5,7 +5,7 @@ import { profile } from '../services/api';
 
 export default function StudentProfile() {
     const navigate = useNavigate();
-    const { updateUser } = useAuth();
+    const { updateUser,logout } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -151,6 +151,7 @@ export default function StudentProfile() {
             <div className="page-header">
                 <button onClick={() => navigate('/student')} className="back-button">← Back</button>
                 <h1>Student Profile</h1>
+                <button className="secondary-btn" onClick={logout}>Logout</button>
             </div>
 
             {/* Instructions */}
