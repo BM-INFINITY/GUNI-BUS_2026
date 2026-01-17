@@ -74,8 +74,8 @@ export default function ApprovedPasses() {
                                         <div key={pass._id} style={{ padding: '15px', border: '1px solid #d4edda', borderRadius: '8px', marginBottom: '10px', background: '#f8fff9' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '15px', alignItems: 'center' }}>
                                                 <div>
-                                                    {pass.studentPhoto ? (
-                                                        <img src={pass.studentPhoto} alt="Student" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                    {pass.userId?.profilePhoto ? (
+                                                        <img src={pass.userId.profilePhoto} alt="Student" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>👤</div>
                                                     )}

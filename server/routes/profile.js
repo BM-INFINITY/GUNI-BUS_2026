@@ -6,8 +6,8 @@ const User = require('../models/User');
 // Get current user profile
 router.get('/', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select('-password');
-        res.json(user);
+        // req.user is already the full user object from auth middleware
+        res.json(req.user);
     } catch (error) {
         console.error('Get profile error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -23,7 +23,17 @@ router.put('/photo', auth, async (req, res) => {
             return res.status(400).json({ message: 'Profile photo is required' });
         }
 
-        const user = await User.findById(req.user._id);
+        // 🔐 Validate image size (base64 → approx bytes)
+        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+        const base64Size = profilePhoto.length * 0.75; // approximate
+
+        if (base64Size > MAX_SIZE) {
+            return res.status(400).json({
+                message: 'Image size is too large. Please upload image smaller than 2MB.'
+            });
+        }
+
+        const user = req.user; // Already fetched by auth middleware
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -32,11 +42,9 @@ router.put('/photo', auth, async (req, res) => {
         // Update photo
         user.profilePhoto = profilePhoto;
 
-        // Check if profile is complete (has all required data + photo)
-        // Profile is complete if: has all data, has photo, and NO pending change request
+        // Mark profile complete only if no pending request
         if (user.name && user.email && user.mobile && user.department && user.year && user.dateOfBirth) {
-            const hasPendingRequest = user.profileChangeRequest && user.profileChangeRequest.status === 'pending';
-            // Only set as complete if there's no pending request
+            const hasPendingRequest = user.profileChangeRequest?.status === 'pending';
             if (!hasPendingRequest) {
                 user.isProfileComplete = true;
             }
@@ -45,15 +53,20 @@ router.put('/photo', auth, async (req, res) => {
         await user.save();
 
         const updatedUser = await User.findById(req.user._id).select('-password');
+
         res.json({
             message: 'Profile photo updated successfully',
             user: updatedUser
         });
+
     } catch (error) {
-        console.error('Update photo error:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("PHOTO UPLOAD ERROR:", error.message);
+        console.error(error);
+        res.status(500).json({ message: error.message || 'Server error while uploading image' });
     }
+
 });
+
 
 // Request profile change
 router.post('/request-change', auth, async (req, res) => {
@@ -64,7 +77,7 @@ router.post('/request-change', auth, async (req, res) => {
             return res.status(400).json({ message: 'Requested changes and reason are required' });
         }
 
-        const user = await User.findById(req.user._id);
+        const user = req.user; // Already fetched by auth middleware
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -101,7 +114,7 @@ router.post('/request-change', auth, async (req, res) => {
 // Mark profile as completed once (student has seen profile page)
 router.put('/mark-complete', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = req.user; // Already fetched by auth middleware
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });

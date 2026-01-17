@@ -19,11 +19,11 @@ router.get('/today-summary', auth, isAdmin, async (req, res) => {
             {
                 $group: {
                     _id: "$route",
-                    totalCheckIns: { 
-                        $sum: { $cond: [{ $ifNull: ["$checkInTime", false] }, 1, 0] } 
+                    totalCheckIns: {
+                        $sum: { $cond: [{ $ifNull: ["$checkInTime", false] }, 1, 0] }
                     },
-                    totalCheckOuts: { 
-                        $sum: { $cond: [{ $ifNull: ["$checkOutTime", false] }, 1, 0] } 
+                    totalCheckOuts: {
+                        $sum: { $cond: [{ $ifNull: ["$checkOutTime", false] }, 1, 0] }
                     }
                 }
             }
@@ -51,8 +51,8 @@ router.get('/active-students', auth, isAdmin, async (req, res) => {
             checkInTime: { $ne: null },
             checkOutTime: null
         })
-        .populate('userId', 'name enrollmentNumber department year')
-        .populate('route', 'routeName routeNumber');
+            .populate('userId', 'name enrollmentNumber department year')
+            .populate('route', 'routeName routeNumber');
 
         res.json(active);
     } catch (error) {
@@ -104,6 +104,92 @@ router.get('/route-report/:routeId', auth, isAdmin, async (req, res) => {
     }
 });
 
+
+// ==========================
+// Live Attendance Analytics
+// ==========================
+router.get('/live', auth, isAdmin, async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        // Fetch all routes
+        const routes = await Route.find({ isActive: true });
+
+        // Fetch today's analytics for all routes
+        const RouteAnalytics = require('../models/RouteAnalytics');
+        const analytics = await RouteAnalytics.find({ date: today })
+            .populate('busId', 'busNumber registrationNumber capacity');
+
+        // Fetch all active buses to map capacity if not in analytics yet
+        const Bus = require('../models/Bus');
+        const allBuses = await Bus.find({ status: 'active' });
+
+        const liveData = [];
+
+        // Helper to infer shift if no data exists
+        const currentShift = new Date().getHours() < 14 ? 'morning' : 'afternoon';
+
+        for (const route of routes) {
+            // Find ALL stats for this route (Morning/Afternoon)
+            const routeStats = analytics.filter(a => a.routeId.toString() === route._id.toString());
+
+            // If no data yet, push a placeholder for the CURRENT shift
+            if (routeStats.length === 0) {
+                const busInfo = allBuses.find(b => b.assignedRoute?.toString() === route._id.toString());
+                const totalSeats = busInfo?.capacity || 0;
+
+                liveData.push({
+                    uniqueKey: `${route._id}-${currentShift}`, // React Key
+                    routeId: route._id,
+                    routeNumber: route.routeNumber,
+                    routeName: route.routeName,
+                    shift: currentShift, // Default to current time-based shift
+                    totalPassengers: 0,
+                    checkedIn: 0,
+                    checkedOut: 0,
+                    busNumber: busInfo?.busNumber || 'Unassigned',
+                    regNumber: busInfo?.registrationNumber || '',
+                    totalSeats: totalSeats,
+                    occupancy: 0,
+                    availableSeats: totalSeats,
+                    updatedAt: new Date()
+                });
+                continue;
+            }
+
+            // Push a card for EACH shift found (e.g. Morning stats AND Afternoon stats if both exist)
+            routeStats.forEach(stat => {
+                const busInfo = stat.busId || allBuses.find(b => b.assignedRoute?.toString() === route._id.toString());
+                const totalSeats = busInfo?.capacity || 0;
+                const checkedIn = stat.checkedIn || 0;
+                const occupancy = totalSeats > 0 ? Math.round((checkedIn / totalSeats) * 100) : 0;
+                const availableSeats = totalSeats - checkedIn;
+
+                liveData.push({
+                    uniqueKey: `${route._id}-${stat.shift}`,
+                    routeId: route._id,
+                    routeNumber: route.routeNumber,
+                    routeName: route.routeName,
+                    shift: stat.shift, // 'morning' or 'afternoon'
+                    totalPassengers: stat.totalPassengers || 0,
+                    checkedIn: checkedIn,
+                    checkedOut: stat.checkedOut || 0,
+                    busNumber: busInfo?.busNumber || 'Unassigned',
+                    regNumber: busInfo?.registrationNumber || '',
+                    totalSeats: totalSeats,
+                    occupancy: occupancy,
+                    availableSeats: availableSeats > 0 ? availableSeats : 0,
+                    updatedAt: stat.updatedAt || new Date()
+                });
+            });
+        }
+
+        res.json(liveData);
+    } catch (error) {
+        console.error("Live analytics error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 
 module.exports = router;
 

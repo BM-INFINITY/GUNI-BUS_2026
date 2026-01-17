@@ -15,6 +15,16 @@ import ProfileChanges from './pages/ProfileChanges';
 import PendingPasses from './pages/PendingPasses';
 import ApprovedPasses from './pages/ApprovedPasses';
 import AdminTransportDashboard from './pages/AdminTransportDashboard';
+import AdminScanPass from './pages/AdminScanPass'; // new scan page
+import BusManagement from './pages/admin/BusManagement';
+import DriverManagement from './pages/admin/DriverManagement';
+import LiveAttendance from './pages/admin/LiveAttendance';
+
+
+//Driver pages
+import DriverDashboard from "./pages/driver/DriverDashboard";
+import ScanPass from './pages/driver/ScanPass';
+import RouteDetails from './pages/driver/RouteDetails';
 
 const queryClient = new QueryClient();
 
@@ -119,15 +129,71 @@ function AppRoutes() {
                 }
             />
 
-            {/* TODO: Uncomment when AdminTransportDashboard is created */}
-            {/* <Route
-                path="/admin/transport"
+            <Route
+                path="/admin/buses"
                 element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminTransportDashboard />
+                        <BusManagement />
                     </ProtectedRoute>
                 }
-            /> */}
+            />
+
+            <Route
+                path="/admin/drivers"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <DriverManagement />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/live-attendance"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <LiveAttendance />
+                    </ProtectedRoute>
+                }
+            />
+
+
+            {/* Driver routes */}
+            <Route
+                path="/driver"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <DriverDashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/driver/scan"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <ScanPass />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/driver/route"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <RouteDetails />
+                    </ProtectedRoute>
+                }
+            />
+            {/* TODO: Uncomment when AdminTransportDashboard is created */}
+            {/* Admin Scan Pass */}
+            <Route
+                path="/admin/scan-pass"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminScanPass />
+                    </ProtectedRoute>
+                }
+            />
 
 
             {/* Catch all - redirect based on role */}
@@ -148,6 +214,7 @@ function AppRoutes() {
 
 function App() {
     return (
+
         <QueryClientProvider client={queryClient}>
             <AuthProvider>
                 <BrowserRouter>

@@ -5,6 +5,7 @@ const { auth, isAdmin } = require('../middleware/auth');
 const User = require('../models/User');
 const BusPass = require('../models/BusPass');
 const DailyAttendance = require('../models/DailyAttendance');
+const Bus = require('../models/Bus');
 
 // Create new student (Admin only)
 router.post('/students', auth, isAdmin, async (req, res) => {
@@ -296,6 +297,194 @@ router.get('/today-attendance', auth, isAdmin, async (req, res) => {
         res.json(populatedData);
     } catch (error) {
         console.error('Get today attendance error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ===============================
+// Bus Management
+// ===============================
+
+// Create new bus
+router.post('/buses', auth, isAdmin, async (req, res) => {
+    try {
+        const {
+            busNumber,
+            registrationNumber,
+            capacity,
+            manufacturer,
+            model,
+            yearOfManufacture,
+            insuranceExpiryDate,
+            fitnessExpiryDate,
+            assignedDriver,
+            assignedRoute
+        } = req.body;
+
+        const newBus = new Bus({
+            busNumber,
+            registrationNumber,
+            capacity,
+            manufacturer,
+            model,
+            yearOfManufacture,
+            insuranceExpiryDate,
+            fitnessExpiryDate,
+            assignedDriver: assignedDriver || null,
+            assignedRoute: assignedRoute || null,
+            createdBy: req.user._id
+        });
+
+        await newBus.save();
+
+        res.status(201).json({ message: 'Bus created successfully', bus: newBus });
+    } catch (error) {
+        console.error('Create bus error:', error);
+        res.status(500).json({ message: error.message || 'Server error' });
+    }
+});
+
+// Get all buses
+router.get('/buses', auth, isAdmin, async (req, res) => {
+    try {
+        const buses = await Bus.find()
+            .populate('assignedDriver', 'name mobile')
+            .populate('assignedRoute', 'routeName routeNumber')
+            .sort({ createdAt: -1 });
+        res.json(buses);
+    } catch (error) {
+        console.error('Get buses error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update bus
+router.put('/buses/:id', auth, isAdmin, async (req, res) => {
+    try {
+        const updatedBus = await Bus.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        if (!updatedBus) return res.status(404).json({ message: 'Bus not found' });
+        res.json({ message: 'Bus updated successfully', bus: updatedBus });
+    } catch (error) {
+        console.error('Update bus error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Delete bus (Soft delete)
+router.delete('/buses/:id', auth, isAdmin, async (req, res) => {
+    try {
+        const bus = await Bus.findById(req.params.id);
+        if (!bus) return res.status(404).json({ message: 'Bus not found' });
+
+        bus.status = 'inactive';
+        bus.isActive = false;
+        await bus.save();
+
+        res.json({ message: 'Bus deactivated successfully' });
+    } catch (error) {
+        console.error('Delete bus error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ===============================
+// Driver Management
+// ===============================
+
+// Create new driver
+router.post('/drivers', auth, isAdmin, async (req, res) => {
+    try {
+        const {
+            name,
+            email,
+            mobile,
+            password,
+            licenseNumber,
+            employeeId,
+            shift,
+            assignedRoute
+        } = req.body;
+
+        // Check availability
+        const existing = await User.findOne({
+            $or: [{ email }, { mobile }, { employeeId }]
+        });
+
+        if (existing) {
+            return res.status(400).json({ message: 'Driver with this email, mobile or employee ID already exists' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const driver = new User({
+            role: 'driver',
+            name,
+            email,
+            mobile,
+            password: hashedPassword,
+            licenseNumber,
+            employeeId,
+            shift,
+            assignedRoute: assignedRoute || null,
+            createdBy: req.user._id
+        });
+
+        await driver.save();
+        res.status(201).json({ message: 'Driver created successfully', driver });
+
+    } catch (error) {
+        console.error('Create driver error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get all drivers
+router.get('/drivers', auth, isAdmin, async (req, res) => {
+    try {
+        const drivers = await User.find({ role: 'driver' })
+            .select('-password')
+            .populate('assignedRoute', 'routeName routeNumber')
+            .populate('assignedBus', 'busNumber registrationNumber')
+            .sort({ createdAt: -1 });
+        res.json(drivers);
+    } catch (error) {
+        console.error('Get drivers error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update driver & assignments
+router.put('/drivers/:id', auth, isAdmin, async (req, res) => {
+    try {
+        const { assignedBus, ...updateData } = req.body;
+
+        const driver = await User.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        ).select('-password');
+
+        if (!driver) return res.status(404).json({ message: 'Driver not found' });
+
+        // If bus assignment changed, upate the Bus model too
+        if (assignedBus) {
+            // specific bus assignment logic would go here if needed 
+            // for bidirectional link maintenance
+            driver.assignedBus = assignedBus;
+            await driver.save();
+
+            // Update Bus to point to this driver
+            await Bus.findByIdAndUpdate(assignedBus, { assignedDriver: driver._id });
+        }
+
+        res.json({ message: 'Driver updated successfully', driver });
+    } catch (error) {
+        console.error('Update driver error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });

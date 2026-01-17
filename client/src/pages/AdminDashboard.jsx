@@ -77,11 +77,32 @@ export default function AdminDashboard() {
             count: stats.approvedPasses
         },
         {
-            icon: '📊',
-            title: 'Transport Analytics',
-            desc: 'Live bus attendance, check-ins & reports',
-            path: '/admin/transport',
+            icon: '🔴',
+            title: 'Live Attendance',
+            desc: 'Real-time tracking of all routes',
+            path: '/admin/live-attendance',
             count: 'Live'
+        },
+        {
+            icon: '🚌',
+            title: 'Manage Buses',
+            desc: 'Create and manage fleet',
+            path: '/admin/buses',
+            count: 'Manage'
+        },
+        {
+            icon: '👮‍♂️',
+            title: 'Manage Drivers',
+            desc: 'Create drivers and assign routes',
+            path: '/admin/drivers',
+            count: 'Manage'
+        },
+        {
+            icon: '📊',
+            title: 'Pass Scan',
+            desc: 'Scan pass check in/check out',
+            path: '/admin/scan-pass',
+            count: 'N/A'
         }
     ];
 

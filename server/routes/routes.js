@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Route = require('../models/Route');
-const { auth, isAdmin } = require('../middleware/auth');
+const User = require('../models/User');
+const { auth, isAdmin, isDriver } = require('../middleware/auth');
 
 // Get all routes
 router.get('/', async (req, res) => {
@@ -95,5 +96,14 @@ router.delete('/:id', auth, isAdmin, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+router.get('/driver/me', auth, isDriver, async (req, res) => {
+    // Re-fetch with populate since req.user doesn't have populated fields
+    const driver = await User.findById(req.user._id)
+        .populate('assignedRoute assignedBus');
+
+    res.json(driver);
+});
+
 
 module.exports = router;

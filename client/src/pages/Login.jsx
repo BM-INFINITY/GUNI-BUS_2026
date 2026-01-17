@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-    const [enrollmentNumber, setEnrollmentNumber] = useState('');
+    const [loginId, setLoginId] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -15,8 +15,8 @@ export default function Login() {
         setError('');
         setLoading(true);
 
-        const result = await login(enrollmentNumber, password);
-
+        const result = await login(loginId, password);
+        console.log('Login result:', result);
         if (result.success) {
             // Use redirectTo from backend
             navigate(result.redirectTo || '/');
@@ -30,8 +30,8 @@ export default function Login() {
     return (
         <div className="login-container">
             <div className="login-box">
-                <h1>🚌 University Bus System</h1>
-                <h2>Student Login</h2>
+                <h1>University Bus System</h1>
+                <h2>Login</h2>
                 <p style={{ color: '#666', marginBottom: '20px' }}>
                     Login with your enrollment number and password
                 </p>
@@ -40,13 +40,13 @@ export default function Login() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Enrollment Number</label>
+                        <label>Enrollment No. / Employee ID</label>
                         <input
                             type="text"
-                            value={enrollmentNumber}
-                            onChange={(e) => setEnrollmentNumber(e.target.value)}
+                            value={loginId}
+                            onChange={(e) => setLoginId(e.target.value)}
                             required
-                            placeholder="Enter your enrollment number"
+                            placeholder="Enter Enrollment No. or Employee ID"
                             autoFocus
                         />
                     </div>
@@ -67,9 +67,6 @@ export default function Login() {
                     </button>
                 </form>
 
-                <p style={{ marginTop: '20px', fontSize: '0.9rem', color: '#666' }}>
-                    ℹ️ First time? You'll be redirected to complete your profile
-                </p>
             </div>
         </div>
     );

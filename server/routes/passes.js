@@ -16,7 +16,7 @@ router.post('/apply', auth, async (req, res) => {
     try {
         const { routeId, selectedStop, shift } = req.body;
 
-        const user = await User.findById(req.user._id);
+        const user = req.user; // Already fetched by auth middleware
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         if (!user.isProfileComplete) {
@@ -184,7 +184,10 @@ router.get('/admin/pending/by-route', auth, isAdmin, async (req, res) => {
 router.get('/admin/approved/by-route', auth, isAdmin, async (req, res) => {
     try {
         const approvedPasses = await BusPass.find({ status: 'approved' })
-            .populate('route', 'routeName routeNumber startPoint endPoint');
+            .populate('route', 'routeName routeNumber startPoint endPoint')
+            .populate('userId', 'name enrollmentNumber profilePhoto department year')
+            .populate('approvedBy', 'name')
+            .sort({ approvedAt: -1 });
 
         const grouped = {};
 

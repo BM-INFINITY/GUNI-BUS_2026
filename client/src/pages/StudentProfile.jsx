@@ -5,7 +5,8 @@ import { profile } from '../services/api';
 
 export default function StudentProfile() {
     const navigate = useNavigate();
-    const { user, updateUser } = useAuth();
+    const { updateUser } = useAuth();
+
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
@@ -13,6 +14,7 @@ export default function StudentProfile() {
 
     const [profileData, setProfileData] = useState(null);
     const [showChangeModal, setShowChangeModal] = useState(false);
+
     const [changeRequest, setChangeRequest] = useState({
         name: false,
         dateOfBirth: false,
@@ -21,6 +23,7 @@ export default function StudentProfile() {
         department: false,
         year: false
     });
+
     const [changedValues, setChangedValues] = useState({});
     const [changeReason, setChangeReason] = useState('');
 
@@ -39,38 +42,50 @@ export default function StudentProfile() {
         }
     };
 
+    // Upload photo
     const handlePhotoUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        setError('');
+        setSuccess('');
+
+        // Size validation
         if (file.size > 2 * 1024 * 1024) {
-            setError('Photo size should be less than 2MB');
+            setError('❌ Image size is too large. Please upload image smaller than 2MB.');
+            return;
+        }
+
+        // Type validation
+        if (!file.type.startsWith('image/')) {
+            setError('❌ Please upload a valid image file (JPG, PNG, JPEG).');
             return;
         }
 
         setUploading(true);
-        setError('');
 
-        try {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const profilePhoto = reader.result;
-                const response = await profile.updatePhoto({ profilePhoto });
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            try {
+                const response = await profile.updatePhoto({ profilePhoto: reader.result });
                 setProfileData(response.data.user);
                 updateUser(response.data.user);
-                setSuccess('Profile photo uploaded successfully!');
-                setTimeout(() => setSuccess(''), 3000);
-            };
-            reader.readAsDataURL(file);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to upload photo');
-        } finally {
-            setUploading(false);
-        }
+                setSuccess('✅ Profile photo uploaded successfully!');
+            } catch (err) {
+                setError(err.response?.data?.message || '❌ Failed to upload photo');
+            } finally {
+                setUploading(false);
+            }
+        };
+
+        reader.readAsDataURL(file);
     };
 
+
+    // Submit change request
     const handleRequestChange = async () => {
         const requestedChanges = {};
+
         Object.keys(changeRequest).forEach(field => {
             if (changeRequest[field] && changedValues[field]) {
                 requestedChanges[field] = changedValues[field];
@@ -83,37 +98,42 @@ export default function StudentProfile() {
         }
 
         if (!changeReason.trim()) {
-            setError('Please provide a reason for the change');
+            setError('Please provide a reason for correction');
             return;
         }
 
         try {
-            const response = await profile.requestChange({ requestedChanges, reason: changeReason });
+            const response = await profile.requestChange({
+                requestedChanges,
+                reason: changeReason
+            });
+
             setProfileData(response.data.user);
             updateUser(response.data.user);
+
             setShowChangeModal(false);
-            setSuccess('Change request submitted successfully! Waiting for admin approval.');
-            setChangeRequest({});
+            setSuccess('Correction request submitted successfully');
             setChangedValues({});
             setChangeReason('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to submit change request');
+            setError(err.response?.data?.message || 'Failed to submit request');
         }
     };
 
+    // Complete profile
     const handleCompleteProfile = async () => {
-        if (!profileData.isProfileComplete) {
-            setError('Please upload your profile photo first');
+        if (!profileData.profilePhoto) {
+            setError('Please upload profile photo first');
             return;
         }
 
         try {
             const response = await profile.markComplete();
             updateUser(response.data.user);
-            setSuccess('Profile completed! Redirecting to dashboard...');
-            setTimeout(() => navigate('/student'), 1500);
+            setSuccess('Profile completed successfully!');
+            setTimeout(() => navigate('/student'), 1200);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to complete profile');
+            setError(err.response?.data?.message || 'Failed to continue');
         }
     };
 
@@ -122,201 +142,176 @@ export default function StudentProfile() {
         return new Date(date).toISOString().split('T')[0];
     };
 
-    if (loading) {
-        return <div className="loading">Loading profile...</div>;
-    }
+    if (loading || !profileData) return <div className="loading">Loading profile...</div>;
 
-    const hasPendingRequest = profileData?.profileChangeRequest?.status === 'pending';
-    const hasRejectedRequest = profileData?.profileChangeRequest?.status === 'rejected';
+
 
     return (
         <div className="page-container">
             <div className="page-header">
                 <button onClick={() => navigate('/student')} className="back-button">← Back</button>
-                <h1>Your Profile</h1>
+                <h1>Student Profile</h1>
             </div>
 
-            {/* Status Messages */}
+            {/* Instructions */}
+            <div className="info-card" style={{ background: '#eef6ff', borderLeft: '4px solid #2563eb' }}>
+                <h3>📌 Instructions</h3>
+                <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
+                    <li>Please verify your university details carefully</li>
+                    <li>Upload your profile photo</li>
+                    <li>If any detail is incorrect, raise a correction request</li>
+                    <li>After verification, continue to dashboard</li>
+                </ul>
+            </div>
+
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            {/* Profile Status Banner */}
-            {!profileData?.isProfileComplete && (
-                <div className="alert alert-warning" style={{ marginBottom: '20px' }}>
-                    <h3>⚠️ Profile Incomplete</h3>
-                    <p>Please upload your profile photo to complete your profile.</p>
-                </div>
-            )}
-
-            {hasPendingRequest && (
-                <div className="alert" style={{ background: '#fff3cd', borderLeft: '4px solid #ffc107', marginBottom: '20px' }}>
-                    <h3>⏳ Change Request Pending</h3>
-                    <p>Your profile change request is being reviewed by the admin.</p>
-                </div>
-            )}
-
-            {hasRejectedRequest && (
-                <div className="alert alert-error" style={{ marginBottom: '20px' }}>
-                    <h3>❌ Change Request Rejected</h3>
-                    <p><strong>Reason:</strong> {profileData.profileChangeRequest.rejectionReason}</p>
-                </div>
-            )}
-
-            {/* Profile Photo Section */}
-            <div className="info-card" style={{ marginBottom: '20px', textAlign: 'center' }}>
-                <h3>Profile Photo</h3>
-                <div style={{ margin: '20px 0' }}>
-                    {profileData?.profilePhoto ? (
-                        <img
-                            src={profileData.profilePhoto}
-                            alt="Profile"
-                            style={{
-                                width: '150px',
-                                height: '150px',
-                                borderRadius: '50%',
-                                objectFit: 'cover',
-                                border: '4px solid #4f46e5'
-                            }}
-                        />
-                    ) : (
-                        <div style={{
-                            width: '150px',
-                            height: '150px',
-                            borderRadius: '50%',
-                            background: '#f3f4f6',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '4rem',
-                            border: '4px solid #e5e7eb'
-                        }}>
-                            📷
-                        </div>
-                    )}
-                </div>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    disabled={uploading}
-                    style={{ margin: '10px 0' }}
-                />
-                <p style={{ fontSize: '0.85rem', color: '#666' }}>
-                    {uploading ? 'Uploading...' : 'Max size: 2MB (JPG, PNG)'}
-                </p>
-            </div>
-
-            {/* Profile Information */}
+            {/* University Details Card */}
             <div className="info-card">
-                <div className="info-header">
-                    <h3>📋 Personal Information</h3>
-                    <button
-                        className="secondary-btn"
-                        onClick={() => setShowChangeModal(true)}
-                        disabled={hasPendingRequest}
-                    >
-                        {hasPendingRequest ? 'Request Pending' : 'Request Change'}
-                    </button>
-                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 250px', gap: '30px' }}>
 
-                <div style={{ marginTop: '20px' }}>
-                    <p style={{ background: '#e8f4fd', padding: '12px', borderRadius: '6px', marginBottom: '20px', color: '#1565c0' }}>
-                        ℹ️ <strong>Note:</strong> These details are from university records and cannot be directly edited.
-                        If you find any errors, please click "Request Change" to submit a correction request.
-                    </p>
+                    {/* Left Side - Details */}
+                    <div>
+                        <h3 style={{ marginBottom: '20px' }}>🎓 University Details</h3>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div className="form-group">
-                            <label>Full Name</label>
-                            <input type="text" value={profileData?.name || ''} disabled readOnly />
+                        <div className="details-grid">
+                            <div>
+                                <label>Name</label>
+                                <input value={profileData?.name || ''} disabled />
+                            </div>
+
+                            <div>
+                                <label>Date of Birth</label>
+                                <input type="date" value={formatDate(profileData?.dateOfBirth)} disabled />
+                            </div>
+
+                            <div>
+                                <label>Mobile</label>
+                                <input value={profileData?.mobile || ''} disabled />
+                            </div>
+
+                            <div>
+                                <label>Email</label>
+                                <input value={profileData?.email || ''} disabled />
+                            </div>
+
+                            <div>
+                                <label>Department</label>
+                                <input value={profileData?.department || ''} disabled />
+                            </div>
+
+                            <div>
+                                <label>Year</label>
+                                <input value={profileData?.year ? `${profileData.year} Year` : ''} disabled />
+                            </div>
                         </div>
-                        <div className="form-group">
-                            <label>Date of Birth</label>
-                            <input type="date" value={formatDate(profileData?.dateOfBirth)} disabled readOnly />
+
+                        {/* Correction Note */}
+                        <p style={{ marginTop: '20px', fontSize: '0.9rem', color: '#444' }}>
+                            ⚠ If any detail is incorrect,&nbsp;
+                            <span
+                                style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '600' }}
+                                onClick={() => setShowChangeModal(true)}
+                            >
+                                click here to raise a correction request
+                            </span>
+                        </p>
+                    </div>
+
+                    {/* Right Side - Photo */}
+                    <div style={{ textAlign: 'center' }}>
+                        <h4>Profile Photo</h4>
+
+                        <div style={{ margin: '15px 0' }}>
+                            {profileData.profilePhoto ? (
+                                <img
+                                    src={profileData.profilePhoto}
+                                    alt="Profile"
+                                    style={{
+                                        width: '120px',
+                                        height: '120px',
+                                        borderRadius: '50%',
+                                        objectFit: 'cover',
+                                        border: '3px solid #2563eb'
+                                    }}
+                                />
+                            ) : (
+                                <div style={{
+                                    width: '120px',
+                                    height: '120px',
+                                    borderRadius: '50%',
+                                    background: '#f3f4f6',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '3rem'
+                                }}>
+                                    📷
+                                </div>
+                            )}
                         </div>
-                        <div className="form-group">
-                            <label>Mobile Number</label>
-                            <input type="text" value={profileData?.mobile || ''} disabled readOnly />
-                        </div>
-                        <div className="form-group">
-                            <label>Email ID</label>
-                            <input type="email" value={profileData?.email || ''} disabled readOnly />
-                        </div>
-                        <div className="form-group">
-                            <label>Department</label>
-                            <input type="text" value={profileData?.department || ''} disabled readOnly />
-                        </div>
-                        <div className="form-group">
-                            <label>Year of Study</label>
-                            <input type="text" value={profileData?.year ? `${profileData.year} Year` : ''} disabled readOnly />
-                        </div>
+
+                        <input type="file" accept="image/*" onChange={handlePhotoUpload} disabled={uploading} />
+                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Max 2MB</p>
                     </div>
                 </div>
             </div>
 
-            {/* Complete Profile Button */}
-            {profileData?.isProfileComplete && !profileData?.hasCompletedProfileOnce && (
-                <button
-                    className="primary-btn"
-                    onClick={handleCompleteProfile}
-                    style={{ width: '100%', marginTop: '20px', padding: '15px', fontSize: '1.1rem' }}
-                >
-                    ✓ Continue to Dashboard
-                </button>
+            {/* Continue Button */}
+            <button
+                className="primary-btn"
+                onClick={handleCompleteProfile}
+                disabled={!profileData.profilePhoto}
+                style={{ width: '100%', marginTop: '25px', padding: '14px' }}
+            >
+                {profileData.profilePhoto ? '✓ Continue to Dashboard' : 'Upload Photo to Continue'}
+            </button>
+
+            {!profileData.profilePhoto && (
+                <p className="warning-text">⚠ Please upload profile photo to proceed</p>
             )}
 
             {/* Change Request Modal */}
             {showChangeModal && (
                 <div className="modal-overlay" onClick={() => setShowChangeModal(false)}>
-                    <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto' }}>
-                        <h2>Request Profile Change</h2>
-                        <p style={{ marginBottom: '20px', color: '#666' }}>
-                            Select the fields you want to change and provide correct values
-                        </p>
+                    <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+                        <h2>Raise Correction Request</h2>
 
-                        <div style={{ marginBottom: '20px' }}>
-                            {['name', 'dateOfBirth', 'mobile', 'email', 'department', 'year'].map(field => (
-                                <div key={field} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={changeRequest[field] || false}
-                                            onChange={(e) => setChangeRequest({ ...changeRequest, [field]: e.target.checked })}
-                                            style={{ marginRight: '10px', width: 'auto' }}
-                                        />
-                                        <strong>{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}</strong>
-                                    </label>
-                                    {changeRequest[field] && (
-                                        <input
-                                            type={field === 'dateOfBirth' ? 'date' : field === 'year' ? 'number' : 'text'}
-                                            placeholder={`Enter correct ${field}`}
-                                            value={changedValues[field] || ''}
-                                            onChange={(e) => setChangedValues({ ...changedValues, [field]: e.target.value })}
-                                            style={{ width: '100%' }}
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                        {['name', 'dateOfBirth', 'mobile', 'email', 'department', 'year'].map(field => (
+                            <div key={field} className="change-row">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={changeRequest[field]}
+                                        onChange={(e) =>
+                                            setChangeRequest({ ...changeRequest, [field]: e.target.checked })
+                                        }
+                                    />
+                                    {field.toUpperCase()}
+                                </label>
 
-                        <div className="form-group">
-                            <label>Reason for Change *</label>
-                            <textarea
-                                value={changeReason}
-                                onChange={(e) => setChangeReason(e.target.value)}
-                                placeholder="Explain why this information needs to be corrected..."
-                                rows="4"
-                                required
-                            />
-                        </div>
+                                {changeRequest[field] && (
+                                    <input
+                                        placeholder={`Enter correct ${field}`}
+                                        value={changedValues[field] || ''}
+                                        onChange={(e) =>
+                                            setChangedValues({ ...changedValues, [field]: e.target.value })
+                                        }
+                                    />
+                                )}
+                            </div>
+                        ))}
+
+                        <textarea
+                            placeholder="Reason for correction"
+                            value={changeReason}
+                            onChange={(e) => setChangeReason(e.target.value)}
+                        />
 
                         <div className="modal-actions">
-                            <button className="primary-btn" onClick={handleRequestChange}>
-                                Submit Request
-                            </button>
-                            <button className="secondary-btn" onClick={() => setShowChangeModal(false)}>
-                                Cancel
-                            </button>
+                            <button className="primary-btn" onClick={handleRequestChange}>Submit</button>
+                            <button className="secondary-btn" onClick={() => setShowChangeModal(false)}>Cancel</button>
                         </div>
                     </div>
                 </div>

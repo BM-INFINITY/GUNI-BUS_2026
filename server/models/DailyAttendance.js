@@ -44,12 +44,27 @@ const dailyAttendanceSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['checked-in', 'checked-out'],
+        enum: ['checked-in', 'checked-out', 'completed'],
         default: 'checked-in'
+    },
+
+    // New field to support Morning/Evening logic
+    shift: {
+        type: String,
+        enum: ['morning', 'afternoon'], // Derived from Driver's Shift
+        required: true
+    },
+
+    // pickup = Going to College, drop = Going Home
+    tripType: {
+        type: String,
+        enum: ['pickup', 'drop'],
+        required: true
     }
 
 }, { timestamps: true });
 
-dailyAttendanceSchema.index({ passId: 1, date: 1 }, { unique: true });
+// Unique: One Pickup + One Drop per Student per Day
+dailyAttendanceSchema.index({ passId: 1, date: 1, tripType: 1 }, { unique: true });
 
 module.exports = mongoose.model('DailyAttendance', dailyAttendanceSchema);

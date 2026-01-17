@@ -42,6 +42,11 @@ const adminRoutes = require('./routes/admin');
 const paymentRoutes = require('./routes/payment');
 // const attendanceRoutes = require('./routes/attendance'); // TODO: Create this file when needed
 const adminAnalyticsRoutes = require('./routes/adminAnalytics');
+const scanpassRoutes = require('./routes/scan');
+const driverRoutes = require('./routes/driver');
+
+
+
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -53,6 +58,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);
 // app.use('/api/attendance', attendanceRoutes); // TODO: Uncomment when file exists
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
+app.use('/api/admin/scanpassRoute', scanpassRoutes);
+app.use('/api/driver', driverRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

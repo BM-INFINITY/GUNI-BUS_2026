@@ -38,8 +38,8 @@ api.interceptors.response.use(
 
 // Auth
 export const auth = {
-    login: (enrollmentNumber, password) =>
-        api.post('/auth/login', { enrollmentNumber, password }),
+    login: (loginId, password) =>
+        api.post('/auth/login', { loginId, password }),
     logout: () => api.post('/auth/logout')
 };
 
@@ -65,30 +65,50 @@ export const payment = {
 };
 
 // Admin - Students
-export const admin = {
-    // Student Management
-    createStudent: (data) => api.post('/admin/students', data),
-    getStudents: (params) => api.get('/admin/students', { params }),
-    getStudent: (id) => api.get(`/admin/students/${id}`),
-
-    // Profile Change Requests
-    getProfileChangeRequests: () => api.get('/admin/profile-change-requests'),
-    approveProfileChange: (studentId) => api.put(`/admin/profile-change-requests/${studentId}/approve`),
-    rejectProfileChange: (studentId, data) => api.put(`/admin/profile-change-requests/${studentId}/reject`, data),
-
-    // Pass Management
-    getPendingPasses: (params) => api.get('/passes/admin/pending', { params }),
-    getPendingPassesByRoute: () => api.get('/passes/admin/pending/by-route'),
-    getApprovedPasses: (params) => api.get('/passes/admin/approved', { params }),
-    getApprovedPassesByRoute: () => api.get('/passes/admin/approved/by-route'),
-    approvePass: (id) => api.put(`/passes/${id}/approve`),
-    rejectPass: (id, data) => api.put(`/passes/${id}/reject`, data)
+export const scan = {
+    post: (payload) => api.post('/admin/scanpassRoute/scan-pass', payload),
 };
 
 // Routes
 export const routes = {
     getAll: () => api.get('/routes'),
     getById: (id) => api.get(`/routes/${id}`)
+};
+
+
+// Admin APIs
+export const admin = {
+    // Students
+    getStudents: (params) => api.get('/admin/students', { params }),
+
+    // Profile change requests
+    getProfileChangeRequests: () => api.get('/admin/profile-change-requests'),
+    approveProfileChange: (studentId) =>
+        api.put(`/admin/profile-change-requests/${studentId}/approve`),
+    rejectProfileChange: (studentId, data) =>
+        api.put(`/admin/profile-change-requests/${studentId}/reject`, data),
+
+    // Pass management
+    getPendingPasses: (params) => api.get('/passes/admin/pending', { params }),
+    getPendingPassesByRoute: () => api.get('/passes/admin/pending/by-route'),
+
+    getApprovedPasses: (params) => api.get('/passes/admin/approved', { params }),
+    getApprovedPassesByRoute: () => api.get('/passes/admin/approved/by-route'),
+
+    approvePass: (id) => api.put(`/passes/${id}/approve`),
+    rejectPass: (id, data) => api.put(`/passes/${id}/reject`, data),
+
+    // Bus Management
+    getBuses: () => api.get('/admin/buses'),
+    createBus: (data) => api.post('/admin/buses', data),
+    updateBus: (id, data) => api.put(`/admin/buses/${id}`, data),
+    deleteBus: (id) => api.delete(`/admin/buses/${id}`),
+
+    // Driver Management
+    getDrivers: () => api.get('/admin/drivers'),
+    createDriver: (data) => api.post('/admin/drivers', data),
+    updateDriver: (id, data) => api.put(`/admin/drivers/${id}`, data),
+    deleteDriver: (id) => api.delete(`/admin/drivers/${id}`)
 };
 
 export default api;

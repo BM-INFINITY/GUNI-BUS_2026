@@ -3,13 +3,15 @@ const User = require('../models/User');
 
 const auth = async (req, res, next) => {
     try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+        const token = req.headers.authorization?.split(' ')[1];
 
         if (!token) {
-            return res.status(401).json({ message: 'No authentication token, access denied' });
+            return res.status(401).json({ message: 'No token provided' });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+
+        // Fetch full user object from database
         const user = await User.findById(decoded.id).select('-password');
 
         if (!user) {
@@ -17,22 +19,23 @@ const auth = async (req, res, next) => {
         }
 
         req.user = user;
+
         next();
     } catch (error) {
-        res.status(401).json({ message: 'Token is not valid' });
+        return res.status(401).json({ message: 'Invalid token' });
     }
 };
 
 const isAdmin = (req, res, next) => {
     if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Access denied. Admin only.' });
+        return res.status(403).json({ message: 'Admin access only' });
     }
     next();
 };
 
 const isDriver = (req, res, next) => {
-    if (req.user.role !== 'driver' && req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Access denied. Driver only.' });
+    if (req.user.role !== 'driver') {
+        return res.status(403).json({ message: 'Driver access only' });
     }
     next();
 };
