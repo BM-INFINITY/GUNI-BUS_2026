@@ -45,7 +45,7 @@ const adminAnalyticsRoutes = require('./routes/adminAnalytics');
 const scanpassRoutes = require('./routes/scan');
 const driverRoutes = require('./routes/driver');
 const driverScanRoutes = require('./routes/driverScan');
-const dayTicketsRoutes = require('./routes/dayTickets');
+const dayTicketsRoutes = require('./routes/dayTicketsApi'); // Renamed to fix deployment issue
 const dayTicketPaymentRoutes = require('./routes/dayTicketPayment');
 const dayTicketScanRoutes = require('./routes/dayTicketScan');
 
