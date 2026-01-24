@@ -44,6 +44,10 @@ const paymentRoutes = require('./routes/payment');
 const adminAnalyticsRoutes = require('./routes/adminAnalytics');
 const scanpassRoutes = require('./routes/scan');
 const driverRoutes = require('./routes/driver');
+const driverScanRoutes = require('./routes/driverScan');
+const dayTicketsRoutes = require('./routes/dayTickets');
+const dayTicketPaymentRoutes = require('./routes/dayTicketPayment');
+const dayTicketScanRoutes = require('./routes/dayTicketScan');
 
 
 
@@ -60,6 +64,10 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/admin/scanpassRoute', scanpassRoutes);
 app.use('/api/driver', driverRoutes);
+app.use('/api/driver/scan', driverScanRoutes);
+app.use('/api/day-tickets', dayTicketsRoutes);
+app.use('/api/day-ticket-payment', dayTicketPaymentRoutes);
+app.use('/api/day-ticket-scan', dayTicketScanRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

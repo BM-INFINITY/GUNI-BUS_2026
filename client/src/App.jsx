@@ -3,19 +3,22 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Student Pages
-import Login from './pages/Login';
-import StudentDashboard from './pages/StudentDashboard';
-import StudentProfile from './pages/StudentProfile';
-import ApplyPass from './pages/ApplyPass';
+import Login from './pages/auth/Login';
+import StudentDashboard from './pages/student/StudentDashboard';
+import StudentProfile from './pages/student/StudentProfile';
+import ApplyPass from './pages/student/ApplyPass';
+import ApplyDayTicket from './pages/student/ApplyDayTicket';
+import MyDayTickets from './pages/student/MyDayTickets';
 
 // Admin Pages
-import AdminDashboard from './pages/AdminDashboard';
-import StudentsManagement from './pages/StudentsManagement';
-import ProfileChanges from './pages/ProfileChanges';
-import PendingPasses from './pages/PendingPasses';
-import ApprovedPasses from './pages/ApprovedPasses';
-import AdminTransportDashboard from './pages/AdminTransportDashboard';
-import AdminScanPass from './pages/AdminScanPass'; // new scan page
+import AdminDashboard from './pages/admin/AdminDashboard';
+import StudentsManagement from './pages/admin/StudentsManagement';
+import ProfileChanges from './pages/admin/ProfileChanges';
+import PendingPasses from './pages/admin/PendingPasses';
+import ApprovedPasses from './pages/admin/ApprovedPasses';
+import AdminTransportDashboard from './pages/admin/AdminTransportDashboard';
+import AdminScanPass from './pages/admin/AdminScanPass'; // new scan page
+import DailyTickets from './pages/admin/DailyTickets';
 import BusManagement from './pages/admin/BusManagement';
 import DriverManagement from './pages/admin/DriverManagement';
 import LiveAttendance from './pages/admin/LiveAttendance';
@@ -79,6 +82,26 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['student']}>
                         <ApplyPass />
+                    </ProtectedRoute>
+                }
+            />
+
+
+
+            <Route
+                path="/student/apply-day-ticket"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <ApplyDayTicket />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/student/my-day-tickets"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <MyDayTickets />
                     </ProtectedRoute>
                 }
             />
@@ -186,6 +209,15 @@ function AppRoutes() {
             />
             {/* TODO: Uncomment when AdminTransportDashboard is created */}
             {/* Admin Scan Pass */}
+            <Route
+                path="/admin/one-day-tickets"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <DailyTickets />
+                    </ProtectedRoute>
+                }
+            />
+
             <Route
                 path="/admin/scan-pass"
                 element={

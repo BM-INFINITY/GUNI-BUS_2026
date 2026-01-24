@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
-const User = require('./models/User');
+const User = require('../models/User');
 
 const path = require('path');
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const seedDriver = async () => {
     try {

@@ -5,7 +5,7 @@ const User = require('../models/User');
 const { auth, isAdmin, isDriver } = require('../middleware/auth');
 
 // Get all routes
-router.get('/', async (req, res) => {
+router.get('/', async(req, res) => {
     try {
         const routes = await Route.find({ isActive: true });
         res.json(routes);
@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get specific route
-router.get('/:id', async (req, res) => {
+router.get('/:id', async(req, res) => {
     try {
         const route = await Route.findById(req.params.id);
 
@@ -32,7 +32,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create route (Admin only)
-router.post('/', auth, isAdmin, async (req, res) => {
+router.post('/', auth, isAdmin, async(req, res) => {
     try {
         const { routeName, routeNumber, shifts, startPoint, endPoint } = req.body;
 
@@ -60,14 +60,12 @@ router.post('/', auth, isAdmin, async (req, res) => {
 });
 
 // Update route (Admin only)
-router.put('/:id', auth, isAdmin, async (req, res) => {
+router.put('/:id', auth, isAdmin, async(req, res) => {
     try {
         const { routeName, shifts, startPoint, endPoint, isActive } = req.body;
 
         const route = await Route.findByIdAndUpdate(
-            req.params.id,
-            { routeName, shifts, startPoint, endPoint, isActive },
-            { new: true, runValidators: true }
+            req.params.id, { routeName, shifts, startPoint, endPoint, isActive }, { new: true, runValidators: true }
         );
 
         if (!route) {
@@ -82,7 +80,7 @@ router.put('/:id', auth, isAdmin, async (req, res) => {
 });
 
 // Delete route (Admin only)
-router.delete('/:id', auth, isAdmin, async (req, res) => {
+router.delete('/:id', auth, isAdmin, async(req, res) => {
     try {
         const route = await Route.findByIdAndDelete(req.params.id);
 
@@ -97,7 +95,7 @@ router.delete('/:id', auth, isAdmin, async (req, res) => {
     }
 });
 
-router.get('/driver/me', auth, isDriver, async (req, res) => {
+router.get('/driver/me', auth, isDriver, async(req, res) => {
     // Re-fetch with populate since req.user doesn't have populated fields
     const driver = await User.findById(req.user._id)
         .populate('assignedRoute assignedBus');

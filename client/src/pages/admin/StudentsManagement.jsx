@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { admin, routes as routeApi } from '../services/api';
+import { admin, routes as routeApi } from '../../services/api';
 import './StudentsManagement.css';
 
 export default function StudentsManagement() {

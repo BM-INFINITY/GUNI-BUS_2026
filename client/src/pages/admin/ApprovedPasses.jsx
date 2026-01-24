@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { admin } from '../services/api';
+import { admin } from '../../services/api';
 
-export default function PendingPasses() {
+export default function ApprovedPasses() {
     const navigate = useNavigate();
     const [passesByRoute, setPassesByRoute] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [expandedRoutes, setExpandedRoutes] = useState({});
+    const [showQR, setShowQR] = useState(null);
 
     useEffect(() => {
         fetchPasses();
@@ -16,41 +16,16 @@ export default function PendingPasses() {
 
     const fetchPasses = async () => {
         try {
-            const response = await admin.getPendingPassesByRoute();
+            const response = await admin.getApprovedPassesByRoute();
             setPassesByRoute(response.data);
             // Expand all routes by default
             const expanded = {};
             response.data.forEach((_, index) => { expanded[index] = true; });
             setExpandedRoutes(expanded);
         } catch (err) {
-            setError('Failed to load pending passes');
+            setError('Failed to load approved passes');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleApprove = async (passId) => {
-        try {
-            await admin.approvePass(passId);
-            setSuccess('Pass approved successfully!');
-            fetchPasses();
-            setTimeout(() => setSuccess(''), 3000);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to approve pass');
-        }
-    };
-
-    const handleReject = async (passId) => {
-        const reason = prompt('Enter reason for rejection:');
-        if (!reason) return;
-
-        try {
-            await admin.rejectPass(passId, { rejectionReason: reason });
-            setSuccess('Pass rejected');
-            fetchPasses();
-            setTimeout(() => setSuccess(''), 3000);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to reject pass');
         }
     };
 
@@ -62,17 +37,16 @@ export default function PendingPasses() {
         <div className="page-container">
             <div className="page-header">
                 <button onClick={() => navigate('/admin')} className="back-button">← Back</button>
-                <h1>Pending Pass Applications</h1>
+                <h1>Approved Bus Passes</h1>
             </div>
 
             {error && <div className="alert alert-error">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
 
             {loading ? (
-                <div className="loading">Loading pending passes...</div>
+                <div className="loading">Loading approved passes...</div>
             ) : passesByRoute.length === 0 ? (
                 <div className="card modern-card">
-                    <p>No pending pass applications</p>
+                    <p>No approved passes yet</p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: '20px' }}>
@@ -87,8 +61,8 @@ export default function PendingPasses() {
                                     <p style={{ color: '#666' }}>{routeData.route.startPoint} → {routeData.route.endPoint}</p>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <span style={{ padding: '8px 16px', background: '#fff3cd', borderRadius: '20px', fontWeight: '600', color: '#856404' }}>
-                                        {routeData.pendingCount} Pending
+                                    <span style={{ padding: '8px 16px', background: '#d4edda', borderRadius: '20px', fontWeight: '600', color: '#155724' }}>
+                                        {routeData.approvedCount} Approved
                                     </span>
                                     <span style={{ fontSize: '1.5rem' }}>{expandedRoutes[index] ? '▼' : '▶'}</span>
                                 </div>
@@ -96,12 +70,12 @@ export default function PendingPasses() {
 
                             {expandedRoutes[index] && (
                                 <div style={{ marginTop: '20px' }}>
-                                    {routeData.applications.map(pass => (
-                                        <div key={pass._id} style={{ padding: '15px', border: '1px solid #e5e7eb', borderRadius: '8px', marginBottom: '10px' }}>
+                                    {routeData.passes.map(pass => (
+                                        <div key={pass._id} style={{ padding: '15px', border: '1px solid #d4edda', borderRadius: '8px', marginBottom: '10px', background: '#f8fff9' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '15px', alignItems: 'center' }}>
                                                 <div>
-                                                    {pass.studentPhoto ? (
-                                                        <img src={pass.studentPhoto} alt="Student" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }} />
+                                                    {pass.userId?.profilePhoto ? (
+                                                        <img src={pass.userId.profilePhoto} alt="Student" style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>👤</div>
                                                     )}
@@ -109,24 +83,45 @@ export default function PendingPasses() {
                                                 <div>
                                                     <strong>{pass.studentName}</strong>
                                                     <p style={{ fontSize: '0.9rem', color: '#666', margin: '5px 0' }}>
-                                                        {pass.enrollmentNumber} | {pass.department} | Year {pass.year}
+                                                        Ref: {pass.referenceNumber} | {pass.enrollmentNumber}
                                                     </p>
                                                     <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                                                        📱 {pass.mobile} | 📧 {pass.email}
+                                                        {pass.department} | Year {pass.year}
                                                     </p>
                                                     <p style={{ fontSize: '0.9rem', marginTop: '5px' }}>
                                                         <strong>Stop:</strong> {pass.selectedStop} | <strong>Shift:</strong> {pass.shift === 'morning' ? '🌅 Morning' : '🌆 Afternoon'}
                                                     </p>
-                                                    <p style={{ fontSize: '0.85rem', color: '#999' }}>
-                                                        Applied: {new Date(pass.applicationDate).toLocaleDateString()}
+                                                    <p style={{ fontSize: '0.85rem', color: '#28a745', marginTop: '5px' }}>
+                                                        ✓ Approved on {new Date(pass.approvedAt).toLocaleDateString()} | Valid until {new Date(pass.validUntil).toLocaleDateString()}
                                                     </p>
+                                                    <p style={{ fontSize: '0.85rem', color: '#444' }}>
+                                                        <strong>Amount:</strong> ₹{pass.amount}
+                                                    </p>
+
+                                                    <p style={{ fontSize: '0.85rem', color: '#444' }}>
+                                                        <strong>Payment Status:</strong> {pass.paymentStatus}
+                                                    </p>
+
+                                                    {pass.razorpayOrderId && (
+                                                        <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                                                            <strong>Order ID:</strong> {pass.razorpayOrderId}
+                                                        </p>
+                                                    )}
+
+                                                    {pass.razorpayPaymentId && (
+                                                        <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                                                            <strong>Payment ID:</strong> {pass.razorpayPaymentId}
+                                                        </p>
+                                                    )}
+
                                                 </div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <button className="primary-btn" onClick={() => handleApprove(pass._id)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-                                                        ✓ Approve
-                                                    </button>
-                                                    <button className="secondary-btn" onClick={() => handleReject(pass._id)} style={{ padding: '8px 16px', fontSize: '0.9rem', background: '#dc3545', color: 'white' }}>
-                                                        ✗ Reject
+                                                <div>
+                                                    <button
+                                                        className="secondary-btn"
+                                                        onClick={() => setShowQR(pass.qrCode)}
+                                                        style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                                                    >
+                                                        📱 View QR
                                                     </button>
                                                 </div>
                                             </div>
@@ -136,6 +131,17 @@ export default function PendingPasses() {
                             )}
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* QR Code Modal */}
+            {showQR && (
+                <div className="modal-overlay" onClick={() => setShowQR(null)}>
+                    <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center' }}>
+                        <h2>Pass QR Code</h2>
+                        <img src={showQR} alt="QR Code" style={{ width: '300px', height: '300px', margin: '20px auto' }} />
+                        <button className="secondary-btn" onClick={() => setShowQR(null)}>Close</button>
+                    </div>
                 </div>
             )}
         </div>

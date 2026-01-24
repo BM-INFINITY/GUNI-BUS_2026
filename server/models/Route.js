@@ -50,6 +50,10 @@ const routeSchema = new mongoose.Schema({
         default: 15000,
         required: true
     },
+    ticketPrices: {
+        single: { type: Number, default: 50 },
+        round: { type: Number, default: 100 }
+    },
     isActive: {
         type: Boolean,
         default: true

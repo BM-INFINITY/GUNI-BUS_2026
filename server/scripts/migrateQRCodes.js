@@ -3,8 +3,8 @@ const dotenv = require("dotenv");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
 
-const connectDB = require("./config/database");
-const BusPass = require("./models/BusPass");
+const connectDB = require("../config/database");
+const BusPass = require("../models/BusPass");
 
 dotenv.config();
 

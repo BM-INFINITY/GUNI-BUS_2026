@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { admin } from '../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { admin } from '../../services/api';
 
 export default function AdminDashboard() {
     const { user, logout } = useAuth();

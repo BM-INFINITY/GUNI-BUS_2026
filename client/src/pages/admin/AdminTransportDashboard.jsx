@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { adminAnalytics } from "../services/adminAnalytics";
+import { useAuth } from "../../context/AuthContext";
+import { adminAnalytics } from "../../services/adminAnalytics";
 
 export default function AdminTransportDashboard() {
   const { user, logout } = useAuth();
@@ -162,6 +162,18 @@ export default function AdminTransportDashboard() {
               </tbody>
             </table>
           )}
+        </div>
+
+
+        {/* ================= REPORTS LINKS ================= */}
+        <div className="card modern-card" style={{ marginTop: '20px' }}>
+          <h2>📑 Reports</h2>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            <button className="primary-btn" onClick={() => navigate('/admin/one-day-tickets')}>
+              One Day Ticket Report
+            </button>
+            {/* Add more report links here if needed */}
+          </div>
         </div>
 
       </div>

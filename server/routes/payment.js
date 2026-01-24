@@ -108,14 +108,17 @@ router.post('/verify', auth, async (req, res) => {
         validUntil.setMonth(validUntil.getMonth() + 6);
         passApplication.validUntil = validUntil;
 
-        // Generate QR code
-        const qrData = JSON.stringify({
-            ref: passApplication.referenceNumber,
-            student: passApplication.enrollmentNumber,
-            route: passApplication.route.routeNumber,
-            valid: validUntil.toISOString()
-        });
-        passApplication.qrCode = await QRCode.toDataURL(qrData);
+        // Generate QR code with HMAC SHA256 signature (SAME AS DAY TICKET)
+        const expiry = validUntil.toISOString();
+        const rawData = `${passApplication._id}|${passApplication.userId}|${expiry}`;
+
+        const signature = crypto
+            .createHmac('sha256', process.env.QR_SECRET)
+            .update(rawData)
+            .digest('hex');
+
+        const qrPayload = `GUNI|${rawData}|${signature}`;
+        passApplication.qrCode = await QRCode.toDataURL(qrPayload);
 
         await passApplication.save();
 
@@ -133,18 +136,18 @@ router.post('/verify', auth, async (req, res) => {
 
 // Handle payment failure
 router.post('/failed', auth, async (req, res) => {
-  const { passApplicationId, error } = req.body;
+    const { passApplicationId, error } = req.body;
 
-  const pass = await BusPass.findById(passApplicationId);
+    const pass = await BusPass.findById(passApplicationId);
 
-  if (pass) {
-    pass.paymentStatus = 'failed';
-    pass.status = 'rejected';   // or 'failed'
-    pass.paymentFailureReason = error;
-    await pass.save();
-  }
+    if (pass) {
+        pass.paymentStatus = 'failed';
+        pass.status = 'rejected';   // or 'failed'
+        pass.paymentFailureReason = error;
+        await pass.save();
+    }
 
-  res.json({ message: 'Payment marked as failed' });
+    res.json({ message: 'Payment marked as failed' });
 });
 
 

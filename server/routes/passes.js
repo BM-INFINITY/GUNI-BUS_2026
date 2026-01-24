@@ -12,7 +12,7 @@ const { generateReferenceNumber } = require('../utils/referenceGenerator');
 // ===============================
 // Apply for bus pass (Student)
 // ===============================
-router.post('/apply', auth, async (req, res) => {
+router.post('/apply', auth, async(req, res) => {
     try {
         const { routeId, selectedStop, shift } = req.body;
 
@@ -46,7 +46,8 @@ router.post('/apply', auth, async (req, res) => {
         let referenceNumber;
         let isUnique = false;
         while (!isUnique) {
-            referenceNumber = generateReferenceNumber();
+            // referenceNumber = generateReferenceNumber();
+            referenceNumber = generateReferenceNumber(route.routeNumber);
             const existing = await BusPass.findOne({ referenceNumber });
             if (!existing) isUnique = true;
         }
@@ -90,7 +91,7 @@ router.post('/apply', auth, async (req, res) => {
 // ===============================
 // Get current user's passes
 // ===============================
-router.get('/my-passes', auth, async (req, res) => {
+router.get('/my-passes', auth, async(req, res) => {
     try {
         const passes = await BusPass.find({ userId: req.user._id })
             .populate('route', 'routeName routeNumber startPoint endPoint')
@@ -107,7 +108,7 @@ router.get('/my-passes', auth, async (req, res) => {
 // ===============================
 // Admin Pending Passes
 // ===============================
-router.get('/admin/pending', auth, isAdmin, async (req, res) => {
+router.get('/admin/pending', auth, isAdmin, async(req, res) => {
     try {
         const query = {
             status: 'pending',
@@ -130,7 +131,7 @@ router.get('/admin/pending', auth, isAdmin, async (req, res) => {
 // ===============================
 // Admin Approved Passes
 // ===============================
-router.get('/admin/approved', auth, isAdmin, async (req, res) => {
+router.get('/admin/approved', auth, isAdmin, async(req, res) => {
     try {
         const approvedPasses = await BusPass.find({ status: 'approved' })
             .populate('userId', 'name email enrollmentNumber')
@@ -148,7 +149,7 @@ router.get('/admin/approved', auth, isAdmin, async (req, res) => {
 // ===============================
 // Admin Pending Passes By Route
 // ===============================
-router.get('/admin/pending/by-route', auth, isAdmin, async (req, res) => {
+router.get('/admin/pending/by-route', auth, isAdmin, async(req, res) => {
     try {
         const pendingPasses = await BusPass.find({
             status: 'pending',
@@ -181,7 +182,7 @@ router.get('/admin/pending/by-route', auth, isAdmin, async (req, res) => {
 // ===============================
 // Admin Approved Passes By Route
 // ===============================
-router.get('/admin/approved/by-route', auth, isAdmin, async (req, res) => {
+router.get('/admin/approved/by-route', auth, isAdmin, async(req, res) => {
     try {
         const approvedPasses = await BusPass.find({ status: 'approved' })
             .populate('route', 'routeName routeNumber startPoint endPoint')
@@ -217,7 +218,7 @@ router.get('/admin/approved/by-route', auth, isAdmin, async (req, res) => {
 // ===============================
 // Approve Pass (Generate Secure QR)
 // ===============================
-router.put('/:id/approve', auth, isAdmin, async (req, res) => {
+router.put('/:id/approve', auth, isAdmin, async(req, res) => {
     try {
         const pass = await BusPass.findById(req.params.id);
 
@@ -267,7 +268,7 @@ router.put('/:id/approve', auth, isAdmin, async (req, res) => {
 // ===============================
 // Reject Pass
 // ===============================
-router.put('/:id/reject', auth, isAdmin, async (req, res) => {
+router.put('/:id/reject', auth, isAdmin, async(req, res) => {
     try {
         const { rejectionReason } = req.body;
 

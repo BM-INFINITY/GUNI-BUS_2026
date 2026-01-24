@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { passes, profile, routes as routesAPI, payment } from '../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { passes, profile, routes as routesAPI, payment } from '../../services/api';
 
 // Razorpay script loader
 const loadRazorpayScript = () => {

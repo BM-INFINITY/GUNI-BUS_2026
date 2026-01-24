@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useNavigate } from "react-router-dom";
-import { scan } from "../services/api";
+import { scan } from "../../services/api";
 import "./AdminScanPass.css";
 
 export default function AdminScanPass() {
@@ -42,7 +42,7 @@ export default function AdminScanPass() {
             err.response?.data?.message ||
             err.message ||
             JSON.stringify(err)
-        );
+          );
         }
       },
       () => {
@@ -51,7 +51,7 @@ export default function AdminScanPass() {
     );
 
     return () => {
-      scanner.clear().catch(() => {});
+      scanner.clear().catch(() => { });
     };
   }, [scanning, scanType]);
 

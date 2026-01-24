@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { passes, profile } from '../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { passes, profile } from '../../services/api';
 
 export default function StudentDashboard() {
     const { user, logout } = useAuth();
@@ -191,6 +191,22 @@ export default function StudentDashboard() {
                         <button className="primary-btn large" onClick={() => navigate('/student/apply-pass')}>
                             Apply Now
                         </button>
+                    </div>
+                )}
+
+                {/* One Day Ticket Option - Only if no active pass */}
+                {!activePass && (
+                    <div className="card modern-card" style={{ marginTop: '20px' }}>
+                        <h2>🎟️ One Day Ticket</h2>
+                        <p>Need to travel for just one day? Buy a single day ticket.</p>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                            <button className="primary-btn" onClick={() => navigate('/student/apply-day-ticket')}>
+                                Purchase New Ticket
+                            </button>
+                            <button className="secondary-btn" onClick={() => navigate('/student/my-day-tickets')}>
+                                View My Tickets
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

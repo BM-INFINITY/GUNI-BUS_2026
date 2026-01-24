@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { profile } from '../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { profile } from '../../services/api';
 
 export default function StudentProfile() {
     const navigate = useNavigate();
-    const { updateUser,logout } = useAuth();
+    const { updateUser, logout } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);

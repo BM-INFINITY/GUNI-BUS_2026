@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
-const Route = require('./models/Route');
+const Route = require('../models/Route');
 
 const circularRoutes = [
   { routeNumber: 'HMT-01', morning: '06:30', afternoon: '10:00', fare: 14500 },

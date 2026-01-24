@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { admin } from '../services/api';
+import { admin } from '../../services/api';
 
 export default function ProfileChanges() {
     const navigate = useNavigate();
