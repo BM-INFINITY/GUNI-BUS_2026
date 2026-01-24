@@ -95,16 +95,26 @@ export default function ScanPass() {
             const token = localStorage.getItem('token');
             const currentTripType = tripTypeRef.current;
 
+            // USE UNIFIED SCAN ENDPOINT
             const res = await axios.post(
-                `${API_URL}/admin/scanpassRoute/scan-pass`,
+                `${API_URL}/driver/scan`,
                 { qrData: decodedText, tripType: currentTripType },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
+            const apiData = res.data;
             const newResult = {
                 success: true,
                 timestamp: new Date(),
-                ...res.data
+                message: apiData.message,
+                // Handle new nested student object vs old flat structure
+                student: apiData.student?.name || apiData.student,
+                enrollment: apiData.student?.enrollment || apiData.enrollment,
+                passShift: apiData.shift || apiData.passShift,
+                // DayTicket specific fields
+                type: apiData.type,
+                scanCount: apiData.scanCount,
+                maxScans: apiData.maxScans
             };
 
             setLastScan(newResult);

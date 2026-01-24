@@ -14,7 +14,7 @@ const { verifyQR, isSameDay, getTodayString } = require('../utils/qrVerification
  * POST /api/driver/scan
  * Body: { qrData, tripType }
  */
-router.post('/scan', auth, isDriver, async (req, res) => {
+router.post('/', auth, isDriver, async (req, res) => {
     try {
         const { qrData, tripType } = req.body;
         const driver = req.user;
