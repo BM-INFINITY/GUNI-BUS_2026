@@ -9,9 +9,7 @@ export default function AdminDashboard() {
 
     const [stats, setStats] = useState({
         totalStudents: 0,
-        pendingChanges: 0,
-        pendingPasses: 0,
-        approvedPasses: 0
+        pendingChanges: 0
     });
 
     const [loading, setLoading] = useState(true);
@@ -22,21 +20,14 @@ export default function AdminDashboard() {
 
     const fetchStats = async () => {
         try {
-            const [studentsRes, changesRes, pendingRes, approvedRes] = await Promise.all([
+            const [studentsRes, changesRes] = await Promise.all([
                 admin.getStudents({ page: 1, limit: 1 }),
-                admin.getProfileChangeRequests(),
-                admin.getPendingPassesByRoute(),
-                admin.getApprovedPassesByRoute()
+                admin.getProfileChangeRequests()
             ]);
-
-            const totalPending = pendingRes.data.reduce((sum, route) => sum + route.pendingCount, 0);
-            const totalApproved = approvedRes.data.reduce((sum, route) => sum + route.approvedCount, 0);
 
             setStats({
                 totalStudents: studentsRes.data.totalStudents || 0,
-                pendingChanges: changesRes.data.length || 0,
-                pendingPasses: totalPending,
-                approvedPasses: totalApproved
+                pendingChanges: changesRes.data.length || 0
             });
         } catch (error) {
             console.error('Error fetching stats:', error);
@@ -62,19 +53,18 @@ export default function AdminDashboard() {
             highlight: stats.pendingChanges > 0
         },
         {
-            icon: '⏳',
-            title: 'Pending Passes',
-            desc: 'Approve or reject pass applications',
-            path: '/admin/passes/pending',
-            count: stats.pendingPasses,
-            highlight: stats.pendingPasses > 0
-        },
-        {
             icon: '✅',
             title: 'Approved Passes',
-            desc: 'View all approved bus passes',
+            desc: 'View all approved bus passes with filters',
             path: '/admin/passes/approved',
-            count: stats.approvedPasses
+            count: 'View'
+        },
+        {
+            icon: '',
+            title: 'Approved Tickets',
+            desc: 'View all approved Tickets with filters',
+            path: '/admin/one-day-tickets',
+            count: 'View'
         },
         {
             icon: '🔴',
@@ -96,13 +86,6 @@ export default function AdminDashboard() {
             desc: 'Create drivers and assign routes',
             path: '/admin/drivers',
             count: 'Manage'
-        },
-        {
-            icon: '📊',
-            title: 'Pass Scan',
-            desc: 'Scan pass check in/check out',
-            path: '/admin/scan-pass',
-            count: 'N/A'
         }
     ];
 

@@ -79,7 +79,7 @@ export default function StudentsManagement() {
         try {
             const params = {
                 page,
-                limit: 10,
+                limit: 100,
                 ...filters
             };
             const response = await admin.getStudents(params);
@@ -268,7 +268,7 @@ export default function StudentsManagement() {
                                     <td>{student.department} - {student.year}Yr</td>
                                     <td>
                                         {student.activePass ? (
-                                            <span className="badge-route">{student.activePass.route?.routeNumber || 'unk'}</span>
+                                            <span className="badge-route">{student.route?.routeNumber || 'unk'}</span>
                                         ) : '-'}
                                     </td>
                                     <td>

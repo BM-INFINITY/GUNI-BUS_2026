@@ -80,11 +80,7 @@ export default function MyDayTickets() {
                         </button>
                         <h1>🎟️ My Day Tickets</h1>
                     </div>
-                    <div className="header-right">
-                        <button className="primary-btn" onClick={() => navigate('/student/apply-day-ticket')}>
-                            + Purchase New Ticket
-                        </button>
-                    </div>
+
                 </div>
             </header>
 
@@ -137,6 +133,60 @@ export default function MyDayTickets() {
                         <button className="primary-btn large" onClick={() => navigate('/student/apply-day-ticket')}>
                             Purchase Day Ticket
                         </button>
+                    </div>
+                )}
+
+                {/* Pending Tickets (Admin Created - Awaiting Payment) */}
+                {tickets.filter(t => t.paymentStatus === 'pending').length > 0 && (
+                    <div className="card modern-card" style={{ marginTop: '20px', background: '#fff7ed', borderLeft: '4px solid #f59e0b' }}>
+                        <h2>⏳ Pending Payment</h2>
+                        <p style={{ color: '#92400e', marginBottom: '15px' }}>
+                            These tickets were created by admin. Please complete payment to activate.
+                        </p>
+
+                        {tickets.filter(t => t.paymentStatus === 'pending').map(ticket => (
+                            <div
+                                key={ticket._id}
+                                style={{
+                                    padding: '15px',
+                                    border: '2px solid #fed7aa',
+                                    borderRadius: '8px',
+                                    marginBottom: '10px',
+                                    background: 'white'
+                                }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                    <div>
+                                        <strong style={{ fontSize: '1.1rem' }}>{new Date(ticket.travelDate).toLocaleDateString()}</strong>
+                                        <p style={{ margin: '5px 0 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
+                                            {ticket.route?.routeName} • {ticket.shift} • {ticket.ticketType === 'single' ? 'Single' : 'Round'} Trip
+                                        </p>
+                                        <p style={{ margin: '5px 0 0 0', color: '#6b7280', fontSize: '0.85rem' }}>
+                                            Stop: {ticket.selectedStop}
+                                        </p>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
+                                            ₹{ticket.amount}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: '#92400e' }}>
+                                            Ref: {ticket.referenceNumber}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    className="primary-btn"
+                                    style={{ width: '100%', background: '#f59e0b', borderColor: '#f59e0b' }}
+                                    onClick={() => {
+                                        // Navigate to payment page with ticket ID
+                                        navigate(`/student/apply-day-ticket?payTicket=${ticket._id}`);
+                                    }}
+                                >
+                                    💳 Pay Now - ₹{ticket.amount}
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 )}
 

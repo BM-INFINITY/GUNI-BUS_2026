@@ -8,6 +8,8 @@ export default function StudentDashboard() {
     const navigate = useNavigate();
     const [userPasses, setUserPasses] = useState([]);
     const [profileData, setProfileData] = useState(null);
+    const [busDetails, setBusDetails] = useState(null);
+    const [boardingLogs, setBoardingLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showPassModal, setShowPassModal] = useState(false);
 
@@ -28,6 +30,41 @@ export default function StudentDashboard() {
 
             setProfileData(profileRes.data);
             setUserPasses(passesRes.data);
+
+            // Fetch Bus Details
+            try {
+                const token = localStorage.getItem('token');
+                console.log("Fetching bus details...");
+                const busRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/students/bus-details`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const busData = await busRes.json();
+                console.log("Bus Details API Response:", busData);
+
+                if (busData.assigned) {
+                    setBusDetails(busData);
+                } else {
+                    console.log("Bus not assigned:", busData.message);
+                }
+            } catch (err) {
+                console.error("Failed to fetch bus details:", err);
+            }
+
+            // Fetch Boarding History
+            try {
+                const token = localStorage.getItem('token');
+                console.log("Fetching boarding history...");
+                const logRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/attendance/my-history`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const logData = await logRes.json();
+                console.log("Boarding History API Response:", logData);
+                console.log("Number of logs:", logData.length);
+                setBoardingLogs(logData);
+            } catch (err) {
+                console.warn("Failed to fetch boarding history:", err);
+            }
+
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -117,6 +154,48 @@ export default function StudentDashboard() {
                             </button>
                         </div>
 
+                        {/* Assigned Bus Details Card */}
+                        {busDetails && (
+                            <div className="card modern-card" style={{ marginTop: '20px', background: '#f0fdf4', borderLeft: '4px solid #22c55e' }}>
+                                <h2>🚌 Assigned Bus & Driver</h2>
+                                <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
+
+                                    {/* Bus Info */}
+                                    <div style={{ flex: 1 }}>
+                                        <h3>Bus Info</h3>
+                                        <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#15803d' }}>{busDetails.busNumber}</p>
+                                        <p style={{ color: '#666' }}>{busDetails.registrationNumber}</p>
+                                    </div>
+
+                                    {/* Driver Info */}
+                                    {busDetails.driver && (
+                                        <div style={{ flex: 1, borderLeft: '1px solid #ddd', paddingLeft: '20px' }}>
+                                            <h3>Driver</h3>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                {busDetails.driver.photo ? (
+                                                    <img
+                                                        src={busDetails.driver.photo}
+                                                        alt="Driver"
+                                                        style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }}
+                                                    />
+                                                ) : (
+                                                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        👨‍✈️
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p style={{ fontWeight: 'bold' }}>{busDetails.driver.name}</p>
+                                                    <a href={`tel:${busDetails.driver.mobile}`} style={{ color: '#22c55e', textDecoration: 'none' }}>
+                                                        📞 {busDetails.driver.mobile}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Pass Modal */}
                         {showPassModal && (
                             <div className="modal-overlay" onClick={() => setShowPassModal(false)}>
@@ -194,21 +273,77 @@ export default function StudentDashboard() {
                     </div>
                 )}
 
-                {/* One Day Ticket Option - Only if no active pass */}
-                {!activePass && (
-                    <div className="card modern-card" style={{ marginTop: '20px' }}>
-                        <h2>🎟️ One Day Ticket</h2>
-                        <p>Need to travel for just one day? Buy a single day ticket.</p>
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                            <button className="primary-btn" onClick={() => navigate('/student/apply-day-ticket')}>
-                                Purchase New Ticket
-                            </button>
-                            <button className="secondary-btn" onClick={() => navigate('/student/my-day-tickets')}>
-                                View My Tickets
-                            </button>
-                        </div>
+                {/* One Day Ticket Option - Show to ALL, but restrict purchase */}
+                <div className="card modern-card" style={{ marginTop: '20px' }}>
+                    <h2>🎟️ One Day Ticket</h2>
+                    <p>Need to travel for just one day? Buy a single day ticket.</p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                        <button
+                            className="primary-btn"
+                            style={{
+                                opacity: activePass ? 0.5 : 1,
+                                cursor: activePass ? 'not-allowed' : 'pointer',
+                                background: activePass ? '#9ca3af' : ''
+                            }}
+                            disabled={!!activePass}
+                            title={activePass ? "You already have an active pass" : ""}
+                            onClick={() => {
+                                if (!activePass) {
+                                    navigate('/student/apply-day-ticket');
+                                }
+                            }}
+                        >
+                            {activePass ? "Unavailable (Pass Active)" : "Purchase New Ticket"}
+                        </button>
+                        <button className="secondary-btn" onClick={() => navigate('/student/my-day-tickets')}>
+                            View My Tickets
+                        </button>
                     </div>
-                )}
+                </div>
+
+                {/* Boarding History Section */}
+                <div className="card modern-card" style={{ marginTop: '20px' }}>
+                    <h2>📜 Recent Boarding History</h2>
+                    {boardingLogs.length === 0 ? (
+                        <p style={{ color: '#666' }}>No boarding records found yet.</p>
+                    ) : (
+                        <div style={{ overflowX: 'auto', marginTop: '10px' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '2px solid #f3f4f6', textAlign: 'left' }}>
+                                        <th style={{ padding: '8px' }}>Date</th>
+                                        <th style={{ padding: '8px' }}>Time</th>
+                                        <th style={{ padding: '8px' }}>Phase</th>
+                                        <th style={{ padding: '8px' }}>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {boardingLogs.map((log) => (
+                                        <tr key={log._id} style={{ borderBottom: '1px solid #f9fafb' }}>
+                                            <td style={{ padding: '8px' }}>{new Date(log.date).toLocaleDateString()}</td>
+                                            <td style={{ padding: '8px' }}>
+                                                {log.checkInTime ? new Date(log.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            </td>
+                                            <td style={{ padding: '8px' }}>
+                                                <span style={{
+                                                    background: log.scanPhase === 'boarding' ? '#dbeafe' : '#fce7f3',
+                                                    color: log.scanPhase === 'boarding' ? '#1e40af' : '#9d174d',
+                                                    padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', textTransform: 'capitalize'
+                                                }}>
+                                                    {log.scanPhase || 'Trip'}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '8px', color: '#15803d' }}>
+                                                ✅ Boarded
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
             </div>
         </div>
     );

@@ -1,27 +1,41 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const { auth, isAdmin } = require('../middleware/auth');
+const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+const Bus = require("../models/Bus");
+const BusPass = require("../models/BusPass");
+const { auth, isAdmin } = require("../middleware/auth");
 
 // Create student account (Admin only)
-router.post('/', auth, isAdmin, async(req, res) => {
+router.post("/", auth, isAdmin, async (req, res) => {
     try {
-        const { name, email, enrollmentNumber, password, phone, department, year, role } = req.body;
+        const {
+            name,
+            email,
+            enrollmentNumber,
+            password,
+            phone,
+            department,
+            year,
+            role,
+        } = req.body;
 
         // Check if user already exists
         const existingUser = await User.findOne({
-            $or: [{ email }, { enrollmentNumber }]
+            $or: [{ email }, { enrollmentNumber }],
         });
 
         if (existingUser) {
-            return res.status(400).json({ message: 'User with this email or enrollment number already exists' });
+            return res
+                .status(400)
+                .json({
+                    message: "User with this email or enrollment number already exists",
+                });
         }
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-
 
         // Create new user
         const user = new User({
@@ -32,87 +46,154 @@ router.post('/', auth, isAdmin, async(req, res) => {
             phone,
             department,
             year,
-            role: role || 'student'
+            role: role || "student",
         });
 
         await user.save();
 
         res.status(201).json({
-            message: 'Student account created successfully',
+            message: "Student account created successfully",
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
                 enrollmentNumber: user.enrollmentNumber,
-                role: user.role
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        console.error("Create student error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+// Get Assigned Bus Details for Student
+router.get("/bus-details", auth, async (req, res) => {
+    try {
+        // 1. Find active pass to get the Route
+        const activePass = await BusPass.findOne({
+            userId: req.user._id,
+            status: "approved",
+        });
+
+        if (!activePass) {
+            console.log("No active pass found for user:", req.user._id);
+            return res.json({ assigned: false, message: "No active pass found" });
+        }
+
+        const routeId = activePass.route;
+        const shift = activePass.shift;
+        console.log(`Searching for Driver with routeId: ${routeId} AND shift: ${shift}`);
+
+        // 2. Find DRIVER assigned to this route AND shift
+        const driver = await User.findOne({
+            role: 'driver',
+            assignedRoute: routeId,
+            shift: shift,
+            isActive: true
+        }).populate('assignedBus');
+
+        if (!driver) {
+            console.log("No driver found for this route");
+            return res.json({ assigned: false, message: 'No driver currently assigned to your route' });
+        }
+
+        console.log("Found Driver:", driver.name);
+
+        // 3. Get Bus from Driver
+        // The driver model has `assignedBus` (populated above) or we search Bus by driver
+        let bus = driver.assignedBus;
+
+        if (!bus) {
+            // Fallback: Search Bus where assignedDriver is this driver
+            bus = await Bus.findOne({ assignedDriver: driver._id, status: 'active' });
+        }
+
+        if (!bus) {
+            console.log("Driver found but no bus linked");
+            return res.json({ assigned: false, message: 'Driver assigned but no bus linked' });
+        }
+
+        console.log("Found Bus:", bus.busNumber);
+
+        // 4. Return details
+        res.json({
+            assigned: true,
+            busNumber: bus.busNumber,
+            registrationNumber: bus.registrationNumber,
+            driver: {
+                name: driver.name,
+                mobile: driver.mobile,
+                photo: driver.profilePhoto,
+                licenseNumber: driver.licenseNumber
             }
         });
     } catch (error) {
-        console.error('Create student error:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Get bus details error:", error);
+        res.status(500).json({ message: "Server error" });
     }
 });
 
 // Get all students (Admin only)
-router.get('/', auth, isAdmin, async(req, res) => {
+router.get("/", auth, isAdmin, async (req, res) => {
     try {
-        const students = await User.find({ role: 'student' }).select('-password');
+        const students = await User.find({ role: "student" }).select("-password");
         res.json(students);
     } catch (error) {
-        console.error('Get students error:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Get students error:", error);
+        res.status(500).json({ message: "Server error" });
     }
 });
 
 // Get student by ID
-router.get('/:id', auth, async(req, res) => {
+router.get("/:id", auth, async (req, res) => {
     try {
-        const student = await User.findById(req.params.id).select('-password');
+        const student = await User.findById(req.params.id).select("-password");
 
         if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(404).json({ message: "Student not found" });
         }
 
         res.json(student);
     } catch (error) {
-        console.error('Get student error:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Get student error:", error);
+        res.status(500).json({ message: "Server error" });
     }
 });
 
 // Update student (Admin only)
-router.put('/:id', auth, isAdmin, async(req, res) => {
+router.put("/:id", auth, isAdmin, async (req, res) => {
     try {
         const { name, email, phone, department, year, isActive } = req.body;
 
         const student = await User.findByIdAndUpdate(
-            req.params.id, { name, email, phone, department, year, isActive }, { new: true, runValidators: true }
-        ).select('-password');
+            req.params.id, { name, email, phone, department, year, isActive }, { new: true, runValidators: true },
+        ).select("-password");
 
         if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(404).json({ message: "Student not found" });
         }
 
-        res.json({ message: 'Student updated successfully', student });
+        res.json({ message: "Student updated successfully", student });
     } catch (error) {
-        console.error('Update student error:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Update student error:", error);
+        res.status(500).json({ message: "Server error" });
     }
 });
 
 // Delete student (Admin only)
-router.delete('/:id', auth, isAdmin, async(req, res) => {
+router.delete("/:id", auth, isAdmin, async (req, res) => {
     try {
         const student = await User.findByIdAndDelete(req.params.id);
 
         if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(404).json({ message: "Student not found" });
         }
 
-        res.json({ message: 'Student deleted successfully' });
+        res.json({ message: "Student deleted successfully" });
     } catch (error) {
-        console.error('Delete student error:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Delete student error:", error);
+        res.status(500).json({ message: "Server error" });
     }
 });
 

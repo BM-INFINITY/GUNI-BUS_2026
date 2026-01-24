@@ -101,7 +101,16 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isAutoCreated: {
+    type: Boolean,
+    default: false
+  },
+  mustChangePassword: {
+    type: Boolean,
+    default: false
+  },
 
+  // Profile Management
   profileChangeRequest: {
     requestedChanges: {
       type: Object,

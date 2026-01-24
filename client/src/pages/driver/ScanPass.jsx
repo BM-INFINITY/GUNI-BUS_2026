@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Html5Qrcode } from 'html5-qrcode';
-import axios from 'axios';
-import './ScanPass.css';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Html5Qrcode } from "html5-qrcode";
+import axios from "axios";
+import "./ScanPass.css";
+
+const isDev = import.meta.env.MODE === "development";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -12,9 +14,10 @@ export default function ScanPass() {
     // Trip detection is now AUTOMATIC (Time-Based)
     // const [tripType, setTripType] = useState('pickup'); // REMOVED
 
+    const [mockTime, setMockTime] = useState(""); //temp
     const [lastScan, setLastScan] = useState(null);
     const [scanHistory, setScanHistory] = useState([]);
-    const [error, setError] = useState('');
+    const [error, setError] = useState("");
     const [processing, setProcessing] = useState(false);
     const [endingTrip, setEndingTrip] = useState(false);
     const [cameraPermission, setCameraPermission] = useState(null); // 'granted', 'denied', 'prompt'
@@ -23,10 +26,12 @@ export default function ScanPass() {
     // const tripTypeRef = useRef(tripType); // REMOVED
     const isCooldownRef = useRef(false);
     const html5QrCodeRef = useRef(null);
+    const mockTimeRef = useRef(mockTime);
 
-    // useEffect(() => {
-    //     tripTypeRef.current = tripType;
-    // }, [tripType]);
+    // Sync ref with state so callback sees fresh value
+    useEffect(() => {
+        mockTimeRef.current = mockTime;
+    }, [mockTime]);
 
     useEffect(() => {
         const initScanner = async () => {
@@ -50,7 +55,7 @@ export default function ScanPass() {
                 // Check cameras
                 const devices = await Html5Qrcode.getCameras();
                 if (devices && devices.length) {
-                    setCameraPermission('granted');
+                    setCameraPermission("granted");
 
                     // Start Camera
                     await html5QrCode.start(
@@ -58,17 +63,17 @@ export default function ScanPass() {
                         {
                             fps: 10,
                             qrbox: { width: 250, height: 250 },
-                            aspectRatio: 1.0
+                            aspectRatio: 1.0,
                         },
                         onScanSuccess,
-                        onScanFailure
+                        onScanFailure,
                     );
                 } else {
                     setError("No cameras found.");
                 }
             } catch (err) {
                 console.error("Camera Init Error:", err);
-                setCameraPermission('denied');
+                setCameraPermission("denied");
                 setError("Camera permission denied or not available.");
             }
         };
@@ -78,9 +83,12 @@ export default function ScanPass() {
         return () => {
             if (html5QrCodeRef.current) {
                 try {
-                    html5QrCodeRef.current.stop().then(() => {
-                        html5QrCodeRef.current.clear();
-                    }).catch(() => { });
+                    html5QrCodeRef.current
+                        .stop()
+                        .then(() => {
+                            html5QrCodeRef.current.clear();
+                        })
+                        .catch(() => { });
                 } catch (e) { }
             }
         };
@@ -96,15 +104,32 @@ export default function ScanPass() {
         setProcessing(true);
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem("token");
             // const currentTripType = tripTypeRef.current; // REMOVED
 
             // USE UNIFIED SCAN ENDPOINT (No tripType sent)
-            const res = await axios.post(
-                `${API_URL}/driver/scan`,
-                { qrData: decodedText },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            //   const res = await axios.post(
+            //     `${API_URL}/driver/scan`,
+            //     { qrData: decodedText },
+            //     { headers: { Authorization: `Bearer ${token}` } },
+            //   );
+
+            const payload = {
+                qrData: decodedText,
+            };
+
+            // DEV ONLY: attach mockTime from REF (to avoid stale closure)
+            const currentMockTime = mockTimeRef.current;
+            if (currentMockTime) {
+                console.log("Adding Mock Time:", currentMockTime);
+                payload.mockTime = new Date(currentMockTime).toISOString();
+            }
+
+            console.log("Scanning with payload:", payload);
+
+            const res = await axios.post(`${API_URL}/driver/scan`, payload, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
 
             const apiData = res.data;
             const newResult = {
@@ -114,17 +139,19 @@ export default function ScanPass() {
                 // Handle new nested student object vs old flat structure
                 student: apiData.student?.name || apiData.student,
                 enrollment: apiData.student?.enrollment || apiData.enrollment,
+                studentPhoto: apiData.student?.photo, // New Field
+                studentDOB: apiData.student?.dob,     // New Field
+                studentMobile: apiData.student?.mobile, // New Field
                 passShift: apiData.shift || apiData.passShift,
                 // DayTicket specific fields
                 type: apiData.type,
                 scanCount: apiData.scanCount,
-                maxScans: apiData.maxScans
+                maxScans: apiData.maxScans,
             };
 
             setLastScan(newResult);
-            setScanHistory(prev => [newResult, ...prev]);
-            setError('');
-
+            setScanHistory((prev) => [newResult, ...prev]);
+            setError("");
         } catch (err) {
             console.error("Scan failed:", err);
             const msg = err.response?.data?.message || "Scan failed";
@@ -135,7 +162,7 @@ export default function ScanPass() {
                     success: false,
                     warning: true,
                     timestamp: new Date(),
-                    ...err.response.data
+                    ...err.response.data,
                 };
                 setLastScan(warningResult);
             } else {
@@ -147,7 +174,7 @@ export default function ScanPass() {
 
             setTimeout(() => {
                 isCooldownRef.current = false;
-                setError('');
+                setError("");
             }, 2500);
         }
     };
@@ -159,21 +186,25 @@ export default function ScanPass() {
 
     const handleEndTrip = async () => {
         // ... unchanged ...
-        if (!window.confirm(`End Trip ? This resets your bus occupancy to 0.`)) return;
+        if (!window.confirm(`End Trip ? This resets your bus occupancy to 0.`))
+            return;
 
         setEndingTrip(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem("token");
             await axios.post(
                 `${API_URL}/admin/scanpassRoute/end-trip`,
                 {},
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: { Authorization: `Bearer ${token}` } },
             );
             alert("Trip Ended. Occupancy Reset.");
             setScanHistory([]);
             setLastScan(null);
         } catch (err) {
-            alert("Failed to end trip: " + (err.response?.data?.message || "Server Error"));
+            alert(
+                "Failed to end trip: " +
+                (err.response?.data?.message || "Server Error"),
+            );
         } finally {
             setEndingTrip(false);
         }
@@ -182,9 +213,20 @@ export default function ScanPass() {
     return (
         <div className="scan-page-modern">
             <header className="scan-header-modern">
-                <button className="back-icon-btn" onClick={() => navigate('/driver')}>
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                <button className="back-icon-btn" onClick={() => navigate("/driver")}>
+                    <svg
+                        width="24"
+                        height="24"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                        />
                     </svg>
                 </button>
                 <div className="header-center-info">
@@ -197,14 +239,16 @@ export default function ScanPass() {
                     onClick={handleEndTrip}
                     disabled={endingTrip}
                 >
-                    {endingTrip ? '...' : 'End Trip'}
+                    {endingTrip ? "..." : "End Trip"}
                 </button>
             </header>
 
             <div className="scan-content-wrapper turbo-mode">
-
                 {/* AUTOMATED TRIP TYPE - NO UI TOGGLE NEEDED */}
-                <div className="trip-type-info" style={{ textAlign: 'center', margin: '10px 0', opacity: 0.7 }}>
+                <div
+                    className="trip-type-info"
+                    style={{ textAlign: "center", margin: "10px 0", opacity: 0.7 }}
+                >
                     <small>Time-Based Trip Detection Active</small>
                 </div>
 
@@ -213,7 +257,9 @@ export default function ScanPass() {
                         <div className="scanner-window-wrapper">
                             <div id="reader" className="qr-reader-modern"></div>
 
-                            <div className={`scan-overlay ${processing ? 'active-pulse' : ''}`}>
+                            <div
+                                className={`scan-overlay ${processing ? "active-pulse" : ""}`}
+                            >
                                 <div className="corner clean-top-left"></div>
                                 <div className="corner clean-top-right"></div>
                                 <div className="corner clean-bottom-right"></div>
@@ -230,7 +276,10 @@ export default function ScanPass() {
                             {error && error.includes("permission") && (
                                 <div className="permission-retry-overlay">
                                     <p>{error}</p>
-                                    <button onClick={() => window.location.reload()} className="retry-btn">
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="retry-btn"
+                                    >
                                         Retry Camera
                                     </button>
                                 </div>
@@ -243,7 +292,7 @@ export default function ScanPass() {
                         {error && !error.includes("permission") && (
                             <div className="result-flash error animate-pop-in">
                                 <div className="flash-icon">
-                                    {error.includes("Valid for") ? '🚫' : '❌'}
+                                    {error.includes("Valid for") ? "🚫" : "❌"}
                                 </div>
                                 <div className="flash-content">
                                     <h3>Scan Failed</h3>
@@ -253,25 +302,47 @@ export default function ScanPass() {
                         )}
 
                         {lastScan && (
-                            <div className={`result-flash ${lastScan.success ? 'success' : lastScan.warning ? 'warning' : 'error'} animate-pop-in`} key={lastScan.timestamp.getTime()}>
+                            <div
+                                className={`result-flash ${lastScan.success ? "success" : lastScan.warning ? "warning" : "error"} animate-pop-in`}
+                                key={lastScan.timestamp.getTime()}
+                            >
                                 <div className="flash-icon">
-                                    {lastScan.success ? '✅' : lastScan.warning ? '⚠️' : '⛔'}
+                                    {lastScan.success ? "✅" : lastScan.warning ? "⚠️" : "⛔"}
                                 </div>
                                 <div className="flash-content">
                                     <h3>{lastScan.message}</h3>
                                     {lastScan.student && (
-                                        <>
-                                            <p className="student-name-large">{lastScan.student}</p>
-                                            <div className="mini-meta">
-                                                <span>{lastScan.enrollment}</span>
-                                                {lastScan.passShift && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span style={{ textTransform: 'capitalize' }}>{lastScan.passShift} Batch</span>
-                                                    </>
-                                                )}
+                                        <div className="student-result-card">
+                                            {lastScan.studentPhoto && (
+                                                <img
+                                                    src={lastScan.studentPhoto}
+                                                    alt="Student"
+                                                    className="student-scan-photo"
+                                                />
+                                            )}
+                                            <div className="student-scan-details">
+                                                <p className="student-name-large">{lastScan.student}</p>
+                                                <p className="student-enrollment">{lastScan.enrollment}</p>
+
+                                                <div className="student-extra-info">
+                                                    {lastScan.studentDOB && (
+                                                        <span className="info-badge">
+                                                            🎂 {new Date(lastScan.studentDOB).toLocaleDateString()}
+                                                        </span>
+                                                    )}
+                                                    {lastScan.studentMobile && (
+                                                        <span className="info-badge">
+                                                            📞 {lastScan.studentMobile}
+                                                        </span>
+                                                    )}
+                                                    {lastScan.passShift && (
+                                                        <span className="info-badge shift-badge">
+                                                            {lastScan.passShift} Batch
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -282,9 +353,30 @@ export default function ScanPass() {
                                 <p>Ready to Scan...</p>
                             </div>
                         )}
+                        {/* ENABLED FOR PRODUCTION DEMO */}
+                        {true && (
+                            <div
+                                style={{
+                                    marginBottom: "12px",
+                                    padding: "10px",
+                                    border: "1px dashed #999",
+                                    borderRadius: "6px",
+                                    background: "#fafafa",
+                                }}
+                            >
+                                <label style={{ fontWeight: "bold" }}>
+                                    DEV ONLY – Mock Scan Time
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={mockTime}
+                                    onChange={(e) => setMockTime(e.target.value)}
+                                    style={{ width: "100%", marginTop: "6px" }}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
-
             </div>
         </div>
     );

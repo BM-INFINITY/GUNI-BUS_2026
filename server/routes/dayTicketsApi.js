@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const DayTicket = require('../models/DayTicket');
+const BusPass = require('../models/BusPass');
 const User = require('../models/User');
 const Route = require('../models/Route');
 const { auth, isAdmin } = require('../middleware/auth');
@@ -22,6 +23,19 @@ router.post('/apply', auth, async (req, res) => {
             return res.status(400).json({
                 message: 'Please complete your profile before purchasing a day ticket',
                 requiresProfile: true
+            });
+        }
+
+        // HARD RESTRICTION: Check for Active Bus Pass
+        // User cannot buy a day ticket if they have a semester pass
+        const activePass = await BusPass.findOne({
+            userId: req.user._id,
+            status: 'approved'
+        });
+
+        if (activePass) {
+            return res.status(403).json({
+                message: 'You cannot purchase a Day Ticket because you already have an Active Bus Pass.'
             });
         }
 

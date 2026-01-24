@@ -118,6 +118,20 @@ const dayTicketSchema = new mongoose.Schema({
         }
     }],
 
+    // Admin creation fields
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User' // Admin who created this ticket
+    },
+    paymentMethod: {
+        type: String,
+        enum: ['online', 'cash'],
+        default: 'online'
+    },
+    receiptNumber: String, // For cash payments
+    priceOverride: Number, // Custom price if admin overrides
+    overrideReason: String, // Reason for price override
+
     // Status
     status: {
         type: String,

@@ -65,11 +65,6 @@ export const payment = {
     paymentFailed: (data) => api.post('/payment/failed', data)
 };
 
-// Admin - Students
-export const scan = {
-    post: (payload) => api.post('/admin/scanpassRoute/scan-pass', payload),
-};
-
 // Routes
 export const routes = {
     getAll: () => api.get('/routes'),
@@ -94,15 +89,8 @@ export const admin = {
     rejectProfileChange: (studentId, data) =>
         api.put(`/admin/profile-change-requests/${studentId}/reject`, data),
 
-    // Pass management
-    getPendingPasses: (params) => api.get('/passes/admin/pending', { params }),
-    getPendingPassesByRoute: () => api.get('/passes/admin/pending/by-route'),
-
+    // Pass viewing (read-only)
     getApprovedPasses: (params) => api.get('/passes/admin/approved', { params }),
-    getApprovedPassesByRoute: () => api.get('/passes/admin/approved/by-route'),
-
-    approvePass: (id) => api.put(`/passes/${id}/approve`),
-    rejectPass: (id, data) => api.put(`/passes/${id}/reject`, data),
 
     // Bus Management
     getBuses: () => api.get('/admin/buses'),

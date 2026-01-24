@@ -14,14 +14,13 @@ import MyDayTickets from './pages/student/MyDayTickets';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import StudentsManagement from './pages/admin/StudentsManagement';
 import ProfileChanges from './pages/admin/ProfileChanges';
-import PendingPasses from './pages/admin/PendingPasses';
 import ApprovedPasses from './pages/admin/ApprovedPasses';
 import AdminTransportDashboard from './pages/admin/AdminTransportDashboard';
-import AdminScanPass from './pages/admin/AdminScanPass'; // new scan page
 import DailyTickets from './pages/admin/DailyTickets';
 import BusManagement from './pages/admin/BusManagement';
 import DriverManagement from './pages/admin/DriverManagement';
 import LiveAttendance from './pages/admin/LiveAttendance';
+import CreateDayTicket from './pages/admin/CreateDayTicket';
 
 
 //Driver pages
@@ -89,6 +88,15 @@ function AppRoutes() {
 
 
             <Route
+                path="/admin/passes/approved"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <ApprovedPasses />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
                 path="/student/apply-day-ticket"
                 element={
                     <ProtectedRoute allowedRoles={['student']}>
@@ -134,23 +142,9 @@ function AppRoutes() {
                 }
             />
 
-            <Route
-                path="/admin/passes/pending"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <PendingPasses />
-                    </ProtectedRoute>
-                }
-            />
 
-            <Route
-                path="/admin/passes/approved"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <ApprovedPasses />
-                    </ProtectedRoute>
-                }
-            />
+
+
 
             <Route
                 path="/admin/buses"
@@ -175,6 +169,15 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['admin']}>
                         <LiveAttendance />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/create-day-ticket"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <CreateDayTicket />
                     </ProtectedRoute>
                 }
             />
@@ -218,14 +221,7 @@ function AppRoutes() {
                 }
             />
 
-            <Route
-                path="/admin/scan-pass"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminScanPass />
-                    </ProtectedRoute>
-                }
-            />
+
 
 
             {/* Catch all - redirect based on role */}

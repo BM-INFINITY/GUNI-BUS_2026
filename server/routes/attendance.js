@@ -3,16 +3,42 @@ const router = express.Router();
 const crypto = require('crypto');
 
 const BusPass = require('../models/BusPass');
-const Attendance = require('../models/Attendance');
+const DailyAttendance = require('../models/DailyAttendance');
 const { auth, isDriver } = require('../middleware/auth');
 
+
+// ==========================
+// Get My Attendance History (Student)
+// ==========================
+router.get('/my-history', auth, async (req, res) => {
+    try {
+        // Calculate date 3 days ago
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+        const logs = await DailyAttendance.find({
+            userId: req.user._id,
+            date: { $gte: threeDaysAgoStr } // Only logs from last 3 days
+        })
+            .populate('routeId', 'routeName routeNumber')
+            .sort({ date: -1, createdAt: -1 })
+            .limit(50); // Fetch last 50 records
+
+        console.log(`[Attendance] User ${req.user._id} requested history. Found ${logs.length} records from last 3 days (since ${threeDaysAgoStr}).`);
+        res.json(logs);
+    } catch (error) {
+        console.error('Get my attendance error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 // ==========================
 // Scan QR (Driver Only)
 // ==========================
 router.post('/scan', auth, isDriver, async (req, res) => {
     try {
-        const { qrData, action } = req.body; 
+        const { qrData, action } = req.body;
         // action = "checkin" | "checkout"
 
         if (!qrData || !action) {
@@ -56,7 +82,7 @@ router.post('/scan', auth, isDriver, async (req, res) => {
         // Today's date
         const today = new Date().toISOString().split('T')[0];
 
-        let attendance = await Attendance.findOne({
+        let attendance = await DailyAttendance.findOne({
             passId: pass._id,
             date: today
         });
@@ -68,7 +94,7 @@ router.post('/scan', auth, isDriver, async (req, res) => {
             }
 
             if (!attendance) {
-                attendance = new Attendance({
+                attendance = new DailyAttendance({
                     passId: pass._id,
                     userId: pass.userId,
                     route: pass.route._id,

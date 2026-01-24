@@ -414,19 +414,62 @@
     opacity: 0.9;
 }
 
+/* NEW: Enhanced Student Profile Result */
+.student-result-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.student-scan-photo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: 4px;
+}
+
+.student-scan-details {
+    display: flex;
+    flex-direction: column;
+}
+
 .student-name-large {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    margin: 0 0 6px 0;
+    margin: 0;
     color: white;
     line-height: 1.2;
 }
 
-.mini-meta {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
+.student-enrollment {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: monospace;
+    margin: 0 0 8px 0;
+}
+
+.student-extra-info {
     display: flex;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.info-badge {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.shift-badge {
+    background: rgba(255, 255, 255, 0.15);
+    font-weight: 600;
+    text-transform: capitalize;
 }
 
 /* Animations */

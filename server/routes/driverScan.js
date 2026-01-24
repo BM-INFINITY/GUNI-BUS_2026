@@ -5,8 +5,9 @@ const DayTicket = require('../models/DayTicket');
 const DailyAttendance = require('../models/DailyAttendance');
 const RouteAnalytics = require('../models/RouteAnalytics'); // Shared Analytics
 const { auth, isDriver } = require('../middleware/auth');
-const { verifyQR, getTodayString, isSameDay } = require('../utils/qrVerification');
-const { validateTimeWindow, getISTDate, getTimeString } = require('../utils/timeUtils');
+const { verifyQR, isSameDay } = require('../utils/qrVerification');
+const { validateTimeWindow, getTimeString } = require('../utils/timeUtils');
+const { getCurrentTime, getTodayString } = require('../utils/timeProvider');
 
 /**
  * UNIFIED DRIVER SCAN ENDPOINT (TIME-BASED)
@@ -56,6 +57,9 @@ router.post('/', auth, isDriver, async (req, res) => {
         const entityShift = entity.shift;
         const studentName = isBusPass ? pass.studentName : ticket.studentName;
         const enrollment = isBusPass ? pass.enrollmentNumber : ticket.enrollmentNumber;
+        const studentPhoto = isBusPass ? pass.studentPhoto : ticket.studentPhoto;
+        const studentDOB = isBusPass ? pass.dateOfBirth : ticket.dateOfBirth;
+        const studentMobile = isBusPass ? pass.mobile : ticket.mobile;
 
         if (entityRouteId !== driver.assignedRoute.toString()) {
             return res.status(403).json({
@@ -75,8 +79,9 @@ router.post('/', auth, isDriver, async (req, res) => {
         if (isBusPass && pass.status !== 'approved') return res.status(400).json({ message: 'Pass not active' });
         if (isDayTicket && ticket.status !== 'active') return res.status(400).json({ message: 'Ticket not active' });
 
+
         // 5. DETERMINE SCAN PHASE (Time-Based)
-        const todayStr = getTodayString();
+        const todayStr = getTodayString(req); // Use Provider-aware date string
 
         // Count existing scans for TODAY
         let scanCount = 0;
@@ -94,7 +99,11 @@ router.post('/', auth, isDriver, async (req, res) => {
         // If scanCount == 0 -> Must be Boarding Phase (Check Time < Cutoff)
         // If scanCount == 1 -> Must be Return Phase (Check Time > Start)
 
-        const validation = validateTimeWindow(activeShift, scanCount);
+        // If scanCount == 1 -> Must be Return Phase (Check Time > Start)
+
+        // Use CENTRALIZED TIME for validation
+        const currentTime = getCurrentTime(req);
+        const validation = validateTimeWindow(activeShift, scanCount, currentTime);
 
         if (!validation.allowed) {
             // Check if it's already maxed out
@@ -137,7 +146,7 @@ router.post('/', auth, isDriver, async (req, res) => {
         // Update DayTicket State
         if (isDayTicket) {
             ticket.scans.push({
-                scannedAt: getISTDate(),
+                scannedAt: getCurrentTime(req),
                 scannedBy: driver._id,
                 tripType: tripType // Legacy
             });
@@ -158,7 +167,7 @@ router.post('/', auth, isDriver, async (req, res) => {
             shift: activeShift,
             tripType: tripType, // Legacy Index Requirement
             scanPhase: scanPhase, // New Field
-            checkInTime: getISTDate(),
+            checkInTime: getCurrentTime(req),
             checkInBy: driver._id,
             status: 'checked-in'
         });
@@ -189,7 +198,10 @@ router.post('/', auth, isDriver, async (req, res) => {
             message: `${scanPhase === 'boarding' ? 'Boarding' : 'Return'} Verified`,
             student: {
                 name: studentName,
-                enrollment: enrollment
+                enrollment: enrollment,
+                photo: studentPhoto,
+                dob: studentDOB,
+                mobile: studentMobile
             },
             route: entity.route.routeName,
             shift: entityShift,

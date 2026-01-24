@@ -3,9 +3,9 @@ const router = express.Router();
 const crypto = require('crypto');
 const DayTicket = require('../models/DayTicket');
 const { auth, isDriver } = require('../middleware/auth');
+const { getCurrentTime, getTodayString } = require('../utils/timeProvider');
 
-// Helper: today date string
-const todayString = () => new Date().toISOString().split('T')[0];
+// Helper: today date string (REMOVED LOCAL HELPER)
 
 // ===============================
 // Scan Day Ticket (Driver)
@@ -39,7 +39,8 @@ router.post('/scan-ticket', auth, isDriver, async (req, res) => {
         }
 
         // Check expiry
-        if (new Date(expiry) < new Date()) {
+        const now = getCurrentTime(req);
+        if (new Date(expiry) < now) {
             return res.status(400).json({ message: 'Ticket expired' });
         }
 
@@ -63,7 +64,7 @@ router.post('/scan-ticket', auth, isDriver, async (req, res) => {
         }
 
         // D. Check if ticket is for today
-        const today = new Date();
+        const today = getCurrentTime(req);
         today.setHours(0, 0, 0, 0);
 
         const ticketDate = new Date(ticket.travelDate);
@@ -128,7 +129,7 @@ router.post('/scan-ticket', auth, isDriver, async (req, res) => {
 
         // I. Record scan
         ticket.scans.push({
-            scannedAt: new Date(),
+            scannedAt: getCurrentTime(req),
             scannedBy: driver._id,
             tripType: tripType
         });

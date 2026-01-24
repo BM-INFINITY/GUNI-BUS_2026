@@ -35,10 +35,12 @@ function getTimeString(date) {
  * Validate if scan is allowed based on Scan Count and Shift Window
  * @param {string} shift - 'morning' or 'afternoon'
  * @param {number} currentScanCount - 0 for Boarding, 1 for Return
+ * @param {Date} currentTime - Optional: Explicit time to validate against (defaults to current IST)
  * @returns {Object} { allowed: boolean, phase: 'boarding'|'return', error: string }
  */
-function validateTimeWindow(shift, currentScanCount) {
-    const nowIST = getISTDate();
+function validateTimeWindow(shift, currentScanCount, currentTime) {
+    // Use provided time or fallback to current IST (for backward compatibility/safety)
+    const nowIST = currentTime || getISTDate();
     const timeStr = getTimeString(nowIST);
     const rules = TIME_RULES[shift];
 
