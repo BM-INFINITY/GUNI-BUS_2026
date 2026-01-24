@@ -65,7 +65,11 @@ app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/admin/scanpassRoute', scanpassRoutes);
 app.use('/api/driver', driverRoutes);
 app.use('/api/driver/scan', driverScanRoutes);
+
+// Fix: Mount DayTickets on multiple paths to handle potential frontend mismatches
 app.use('/api/day-tickets', dayTicketsRoutes);
+app.use('/api/tickets', dayTicketsRoutes); // Alias for backward compatibility
+
 app.use('/api/day-ticket-payment', dayTicketPaymentRoutes);
 app.use('/api/day-ticket-scan', dayTicketScanRoutes);
 
