@@ -56,15 +56,25 @@ const dailyAttendanceSchema = new mongoose.Schema({
     },
 
     // pickup = Going to College, drop = Going Home
+    // DEPRECATED: Kept for backward compatibility, but not required for new logic
     tripType: {
         type: String,
         enum: ['pickup', 'drop'],
+        required: false
+    },
+
+    // NEW LOGIC: Boarding vs Return
+    scanPhase: {
+        type: String,
+        enum: ['boarding', 'return'],
         required: true
     }
 
 }, { timestamps: true });
 
-// Unique: One Pickup + One Drop per Student per Day
-dailyAttendanceSchema.index({ passId: 1, date: 1, tripType: 1 }, { unique: true });
+// INDEXES
+// Fast lookup for today's scans
+dailyAttendanceSchema.index({ passId: 1, date: 1 });
+// dailyAttendanceSchema.index({ passId: 1, date: 1, tripType: 1 }, { unique: true }); // REMOVED to allow time-based logic
 
 module.exports = mongoose.model('DailyAttendance', dailyAttendanceSchema);

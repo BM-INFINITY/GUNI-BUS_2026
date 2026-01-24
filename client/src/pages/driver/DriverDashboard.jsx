@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import "./DriverDashboard.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { driver as driverApi } from "../../services/api";
 
 export default function DriverDashboard() {
   const [loading, setLoading] = useState(true);
@@ -20,13 +18,7 @@ export default function DriverDashboard() {
 
   const fetchDashboard = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.get(`${API_URL}/driver/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const res = await driverApi.getDashboard();
 
       setDriver(res.data.driver);
       setAnalytics(res.data.analytics);
@@ -34,7 +26,6 @@ export default function DriverDashboard() {
       setLoading(false);
     } catch (err) {
       console.error("Dashboard error:", err);
-      // alert("Failed to load dashboard");
       setLoading(false);
     }
   };
@@ -124,21 +115,17 @@ export default function DriverDashboard() {
           )}
         </section>
 
-        {/* Quick Actions Grid */}
+        {/* Quick Actions Grid - UPDATED FOR SINGLE BUTTON */}
         <section className="quick-actions-bar">
-          <button className="action-card primary" onClick={() => navigate("/driver/scan?mode=check-in")}>
+          <button
+            className="action-card primary"
+            onClick={() => navigate("/driver/scan")}
+            style={{ minHeight: '120px' }}
+          >
             <div className="icon-wrapper">📲</div>
             <div className="action-text">
-              <h3>Check-In</h3>
-              <p>Scan Student Pass</p>
-            </div>
-          </button>
-
-          <button className="action-card secondary" onClick={() => navigate("/driver/scan?mode=check-out")}>
-            <div className="icon-wrapper">🏁</div>
-            <div className="action-text">
-              <h3>Check-Out</h3>
-              <p>End Trip for Student</p>
+              <h3>Scan Pass</h3>
+              <p>Boarding / Return</p>
             </div>
           </button>
 
@@ -146,7 +133,7 @@ export default function DriverDashboard() {
             <div className="icon-wrapper">🗺️</div>
             <div className="action-text">
               <h3>Route Map</h3>
-              <p>View Stops & Path</p>
+              <p>Stops & Path</p>
             </div>
           </button>
         </section>

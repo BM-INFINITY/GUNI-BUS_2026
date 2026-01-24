@@ -3,52 +3,39 @@ const router = express.Router();
 const BusPass = require('../models/BusPass');
 const DayTicket = require('../models/DayTicket');
 const DailyAttendance = require('../models/DailyAttendance');
-const RouteAnalytics = require('../models/RouteAnalytics');
+const RouteAnalytics = require('../models/RouteAnalytics'); // Shared Analytics
 const { auth, isDriver } = require('../middleware/auth');
-const { verifyQR, isSameDay, getTodayString } = require('../utils/qrVerification');
+const { verifyQR, getTodayString, isSameDay } = require('../utils/qrVerification');
+const { validateTimeWindow, getISTDate, getTimeString } = require('../utils/timeUtils');
 
 /**
- * UNIFIED DRIVER SCAN ENDPOINT
- * Automatically detects BusPass vs DayTicket and applies appropriate rules
+ * UNIFIED DRIVER SCAN ENDPOINT (TIME-BASED)
  * 
- * POST /api/driver/scan
- * Body: { qrData, tripType }
+ * Rules:
+ * 1. Morning Boarding: < 08:30 AM
+ * 2. Morning Return: > 02:10 PM
+ * 3. Afternoon Boarding: < 11:40 AM
+ * 4. Afternoon Return: > 05:10 PM
+ * 5. Strict Shift Isolation
+ * 6. Strict Driver Authorization
  */
 router.post('/', auth, isDriver, async (req, res) => {
     try {
-        const { qrData, tripType } = req.body;
+        const { qrData } = req.body; // NO tripType input
         const driver = req.user;
         const activeShift = driver.shift;
 
-        // ========================================
-        // 1. VALIDATE INPUT
-        // ========================================
-        if (!qrData) {
-            return res.status(400).json({ message: 'QR data required' });
-        }
+        // 1. VALIDATION
+        if (!qrData) return res.status(400).json({ message: 'QR data required' });
+        if (!activeShift) return res.status(403).json({ message: 'No shift assigned to driver' });
+        if (!driver.assignedRoute) return res.status(403).json({ message: 'No route assigned to driver' });
 
-        if (!activeShift) {
-            return res.status(403).json({ message: 'No shift assigned to driver. Contact admin.' });
-        }
-
-        if (!tripType || !['pickup', 'drop'].includes(tripType)) {
-            return res.status(400).json({ message: 'Trip type (pickup/drop) required' });
-        }
-
-        // ========================================
-        // 2. VERIFY QR CODE (SHARED LOGIC)
-        // ========================================
+        // 2. VERIFY QR
         const qrResult = verifyQR(qrData);
-
-        if (!qrResult.valid) {
-            return res.status(400).json({ message: qrResult.error });
-        }
-
+        if (!qrResult.valid) return res.status(400).json({ message: qrResult.error });
         const { id, userId, expiry } = qrResult;
 
-        // ========================================
-        // 3. AUTO-DETECT: BusPass or DayTicket
-        // ========================================
+        // 3. AUTO-DETECT TYPE
         let pass = await BusPass.findById(id).populate('route');
         let ticket = null;
         let isBusPass = false;
@@ -58,309 +45,161 @@ router.post('/', auth, isDriver, async (req, res) => {
             isBusPass = true;
         } else {
             ticket = await DayTicket.findById(id).populate('route');
-            if (ticket) {
-                isDayTicket = true;
-            }
+            if (ticket) isDayTicket = true;
         }
 
-        if (!isBusPass && !isDayTicket) {
-            return res.status(400).json({ message: 'Invalid QR code - not found in system' });
+        if (!isBusPass && !isDayTicket) return res.status(400).json({ message: 'Invalid QR code - not found' });
+
+        // 4. COMMON AUTHORIZATION (Route & Shift)
+        const entity = isBusPass ? pass : ticket;
+        const entityRouteId = entity.route._id.toString();
+        const entityShift = entity.shift;
+        const studentName = isBusPass ? pass.studentName : ticket.studentName;
+        const enrollment = isBusPass ? pass.enrollmentNumber : ticket.enrollmentNumber;
+
+        if (entityRouteId !== driver.assignedRoute.toString()) {
+            return res.status(403).json({
+                message: 'Wrong Route',
+                expected: driver.assignedRoute,
+                actual: entity.route.routeName
+            });
         }
 
-        // ========================================
-        // 4. BUSPASS LOGIC
-        // ========================================
+        if (entityShift !== activeShift) {
+            return res.status(403).json({
+                message: `Shift Mismatch. Student is ${entityShift}, Bus is ${activeShift}`,
+                passShift: entityShift
+            });
+        }
+
+        if (isBusPass && pass.status !== 'approved') return res.status(400).json({ message: 'Pass not active' });
+        if (isDayTicket && ticket.status !== 'active') return res.status(400).json({ message: 'Ticket not active' });
+
+        // 5. DETERMINE SCAN PHASE (Time-Based)
+        const todayStr = getTodayString();
+
+        // Count existing scans for TODAY
+        let scanCount = 0;
+        let scans = [];
+
         if (isBusPass) {
-            // Check status
-            if (pass.status !== 'approved') {
-                return res.status(400).json({ message: 'Pass is not approved' });
-            }
+            scanCount = await DailyAttendance.countDocuments({ passId: id, date: todayStr });
+        } else {
+            // For DayTicket, trust the DB Array for count (handle edge cases)
+            scanCount = await DailyAttendance.countDocuments({ passId: id, date: todayStr });
+        }
 
-            if (pass.paymentStatus !== 'completed') {
-                return res.status(400).json({ message: 'Payment not completed' });
-            }
+        // 6. VALIDATE TIME WINDOW
+        // We calculate phase based on 'scanCount' AND 'Time'.
+        // If scanCount == 0 -> Must be Boarding Phase (Check Time < Cutoff)
+        // If scanCount == 1 -> Must be Return Phase (Check Time > Start)
 
-            // Check route
-            if (pass.route._id.toString() !== driver.assignedRoute.toString()) {
-                return res.status(403).json({
-                    message: 'Wrong route',
-                    passRoute: pass.route.routeName,
-                    driverRoute: driver.assignedRoute
-                });
-            }
+        const validation = validateTimeWindow(activeShift, scanCount);
 
-            // Check shift
-            if (pass.shift !== activeShift) {
-                return res.status(403).json({
-                    message: `Pass valid for ${pass.shift.toUpperCase()} shift only`,
-                    passShift: pass.shift,
-                    driverShift: activeShift
-                });
-            }
-
-            // ========================================
-            // BUSPASS: 2 SCANS PER DAY LIMIT
-            // ========================================
-            const todayStr = getTodayString();
-
-            const todayScans = await DailyAttendance.countDocuments({
-                passId: id,
-                date: todayStr
-            });
-
-            if (todayScans >= 2) {
+        if (!validation.allowed) {
+            // Check if it's already maxed out
+            if (scanCount >= 2) {
                 return res.status(400).json({
-                    message: 'Daily scan limit reached for this pass (2 scans/day)',
-                    scansToday: todayScans
+                    message: 'Daily limit reached (2 scans completed)',
+                    scanCount: scanCount,
+                    maxScans: 2
                 });
             }
+            return res.status(400).json({ message: validation.error });
+        }
 
-            // Check duplicate for this trip type
-            const existingScan = await DailyAttendance.findOne({
-                passId: id,
-                date: todayStr,
-                tripType: tripType
-            });
+        const scanPhase = validation.phase; // 'boarding' or 'return'
 
-            if (existingScan) {
-                return res.status(400).json({
-                    message: `Already scanned for ${tripType === 'pickup' ? 'college' : 'home'} trip today`,
-                    time: existingScan.checkInTime
-                });
+        // Auto-map to Legacy tripType for DB Index Compatibility
+        const tripType = scanPhase === 'boarding' ? 'pickup' : 'drop';
+
+        // 7. SPECIFIC RULES
+
+        // DayTicket: Single Trip Check
+        if (isDayTicket && ticket.ticketType === 'single') {
+            if (scanCount >= 1) { // Current count before this scan
+                return res.status(400).json({ message: 'Single Ticket already used' });
             }
+            // Allow Boarding phase (count 0)
+        }
 
-            // Record attendance
-            const attendance = await DailyAttendance.create({
-                passId: id,
-                userId: userId,
-                routeId: pass.route._id,
-                date: todayStr,
-                shift: activeShift,
-                tripType: tripType,
-                checkInTime: new Date(),
-                checkInBy: driver._id,
-                status: 'checked-in',
-                isDayTicket: false
-            });
-
-            // Update analytics
-            await RouteAnalytics.findOneAndUpdate(
-                { routeId: pass.route._id, date: todayStr, shift: activeShift },
-                {
-                    $setOnInsert: {
-                        routeId: pass.route._id,
-                        date: todayStr,
-                        busId: driver.assignedBus,
-                        shift: activeShift
-                    },
-                    $inc: {
-                        totalPassengers: 1,
-                        checkedIn: 1
-                    }
-                },
-                { upsert: true, new: true }
-            );
-
-            return res.json({
-                success: true,
-                type: 'pass',
-                message: 'Bus Pass verified successfully',
-                student: {
-                    name: pass.studentName,
-                    enrollment: pass.enrollmentNumber
-                },
-                route: pass.route.routeName,
-                shift: pass.shift,
-                tripType: tripType,
-                time: attendance.checkInTime,
-                scansToday: todayScans + 1,
-                maxScansPerDay: 2
+        // Duplicate Check (Sanity Check - Should fall under 'scanCount' validation usually)
+        const existing = await DailyAttendance.findOne({ passId: id, date: todayStr, tripType: tripType });
+        if (existing) {
+            return res.status(400).json({
+                message: `Already scanned for ${scanPhase}`,
+                time: existing.checkInTime
             });
         }
 
-        // ========================================
-        // 5. DAYTICKET LOGIC
-        // ========================================
+        // 8. EXECUTE SCAN
+
+        // Update DayTicket State
         if (isDayTicket) {
-            // Check status
-            if (ticket.status !== 'active') {
-                return res.status(400).json({
-                    message: `Ticket is ${ticket.status}`,
-                    status: ticket.status
-                });
-            }
-
-            if (ticket.paymentStatus !== 'completed') {
-                return res.status(400).json({ message: 'Payment not completed' });
-            }
-
-            // Check date (must be today)
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const ticketDate = new Date(ticket.travelDate);
-            ticketDate.setHours(0, 0, 0, 0);
-
-            if (ticketDate.getTime() !== today.getTime()) {
-                // Auto-expire if past date
-                if (ticketDate < today && ticket.status === 'active') {
-                    ticket.status = 'expired';
-                    await ticket.save();
-                }
-
-                return res.status(400).json({
-                    message: `Ticket valid only on ${ticketDate.toLocaleDateString()}`,
-                    validDate: ticketDate
-                });
-            }
-
-            // Check route
-            if (ticket.route._id.toString() !== driver.assignedRoute.toString()) {
-                return res.status(403).json({
-                    message: 'Wrong route',
-                    ticketRoute: ticket.route.routeName,
-                    driverRoute: driver.assignedRoute
-                });
-            }
-
-            // Check shift
-            if (ticket.shift !== activeShift) {
-                return res.status(403).json({
-                    message: `Ticket valid for ${ticket.shift.toUpperCase()} shift only`,
-                    ticketShift: ticket.shift,
-                    driverShift: activeShift
-                });
-            }
-
-            // ========================================
-            // DAYTICKET: SCAN LIMIT ENFORCEMENT
-            // ========================================
-
-            // Check if already at scan limit
-            if (ticket.scanCount >= ticket.maxScans) {
-                if (ticket.status === 'active') {
-                    ticket.status = 'used';
-                    await ticket.save();
-                }
-
-                return res.status(400).json({
-                    message: `Ticket fully used (${ticket.scanCount}/${ticket.maxScans} scans)`,
-                    scanCount: ticket.scanCount,
-                    maxScans: ticket.maxScans
-                });
-            }
-
-            // Get today's scans for this ticket
-            const todayScans = ticket.scans.filter(scan =>
-                isSameDay(scan.scannedAt, today)
-            );
-
-            // For single trip: only 1 scan allowed
-            if (ticket.ticketType === 'single') {
-                if (todayScans.length > 0) {
-                    return res.status(400).json({
-                        message: 'Single trip ticket already used today',
-                        scanCount: ticket.scanCount,
-                        maxScans: ticket.maxScans
-                    });
-                }
-            }
-
-            // For round trip: 2 scans allowed, but not same tripType twice
-            if (ticket.ticketType === 'round') {
-                if (todayScans.length >= 2) {
-                    return res.status(400).json({
-                        message: 'Both trips completed for today',
-                        scanCount: ticket.scanCount,
-                        maxScans: ticket.maxScans
-                    });
-                }
-
-                const alreadyScannedThisTrip = todayScans.some(
-                    scan => scan.tripType === tripType
-                );
-
-                if (alreadyScannedThisTrip) {
-                    return res.status(400).json({
-                        message: `Already scanned for ${tripType === 'pickup' ? 'college' : 'home'} trip today`,
-                        scanCount: ticket.scanCount,
-                        maxScans: ticket.maxScans
-                    });
-                }
-            }
-
-            // ========================================
-            // RECORD SCAN
-            // ========================================
             ticket.scans.push({
-                scannedAt: new Date(),
+                scannedAt: getISTDate(),
                 scannedBy: driver._id,
-                tripType: tripType
+                tripType: tripType // Legacy
             });
             ticket.scanCount += 1;
 
-            // Mark as used if limit reached
             if (ticket.scanCount >= ticket.maxScans) {
                 ticket.status = 'used';
             }
-
             await ticket.save();
-
-            // Record attendance
-            const attendance = await DailyAttendance.create({
-                passId: id,
-                userId: userId,
-                routeId: ticket.route._id,
-                date: getTodayString(),
-                shift: activeShift,
-                tripType: tripType,
-                checkInTime: new Date(),
-                checkInBy: driver._id,
-                status: 'checked-in',
-                isDayTicket: true
-            });
-
-            // Update analytics
-            await RouteAnalytics.findOneAndUpdate(
-                { routeId: ticket.route._id, date: getTodayString(), shift: activeShift },
-                {
-                    $setOnInsert: {
-                        routeId: ticket.route._id,
-                        date: getTodayString(),
-                        busId: driver.assignedBus,
-                        shift: activeShift
-                    },
-                    $inc: {
-                        totalPassengers: 1,
-                        checkedIn: 1,
-                        revenue: ticket.amount || 0
-                    }
-                },
-                { upsert: true, new: true }
-            );
-
-            return res.json({
-                success: true,
-                type: 'ticket',
-                message: 'Day Ticket verified successfully',
-                student: {
-                    name: ticket.studentName,
-                    enrollment: ticket.enrollmentNumber
-                },
-                route: ticket.route.routeName,
-                shift: ticket.shift,
-                tripType: tripType,
-                ticketType: ticket.ticketType,
-                time: attendance.checkInTime,
-                scanCount: ticket.scanCount,
-                maxScans: ticket.maxScans,
-                scansRemaining: ticket.maxScans - ticket.scanCount,
-                status: ticket.status
-            });
         }
 
+        // Create Attendance Record
+        const attendance = await DailyAttendance.create({
+            passId: id,
+            userId: userId,
+            routeId: entity.route._id,
+            date: todayStr,
+            shift: activeShift,
+            tripType: tripType, // Legacy Index Requirement
+            scanPhase: scanPhase, // New Field
+            checkInTime: getISTDate(),
+            checkInBy: driver._id,
+            status: 'checked-in'
+        });
+
+        // Update Analytics
+        await RouteAnalytics.findOneAndUpdate(
+            { routeId: entity.route._id, date: todayStr, shift: activeShift },
+            {
+                $setOnInsert: {
+                    routeId: entity.route._id,
+                    date: todayStr,
+                    busId: driver.assignedBus,
+                    shift: activeShift
+                },
+                $inc: {
+                    totalPassengers: 1,
+                    checkedIn: 1,
+                    revenue: isDayTicket ? (ticket.amount || 0) : 0
+                }
+            },
+            { upsert: true, new: true }
+        );
+
+        // 9. RESPONSE
+        return res.json({
+            success: true,
+            type: isBusPass ? 'pass' : 'ticket',
+            message: `${scanPhase === 'boarding' ? 'Boarding' : 'Return'} Verified`,
+            student: {
+                name: studentName,
+                enrollment: enrollment
+            },
+            route: entity.route.routeName,
+            shift: entityShift,
+            scanPhase: scanPhase, // Frontend can show "Boarding" or "Return"
+            scanCount: scanCount + 1,
+            maxScans: isDayTicket ? ticket.maxScans : 2
+        });
+
     } catch (error) {
-        console.error('Unified scan error:', error);
+        console.error('Time-Based Scan Error:', error);
         return res.status(500).json({ message: 'Scan failed', error: error.message });
     }
 });

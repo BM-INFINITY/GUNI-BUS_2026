@@ -117,4 +117,11 @@ export const admin = {
     deleteDriver: (id) => api.delete(`/admin/drivers/${id}`)
 };
 
+// Driver
+export const driver = {
+    getDashboard: () => api.get('/driver/dashboard'),
+    scan: (data) => api.post('/driver/scan', data),
+    getRoute: () => api.get('/driver/route')
+};
+
 export default api;

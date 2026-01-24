@@ -46,7 +46,3 @@ const routeAnalyticsSchema = new mongoose.Schema({
 routeAnalyticsSchema.index({ routeId: 1, date: 1, shift: 1 }, { unique: true });
 
 module.exports = mongoose.model('RouteAnalytics', routeAnalyticsSchema);
-
-routeAnalyticsSchema.index({ routeId: 1, date: 1 }, { unique: true });
-
-module.exports = mongoose.model('RouteAnalytics', routeAnalyticsSchema);

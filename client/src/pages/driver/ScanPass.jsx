@@ -9,8 +9,8 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 export default function ScanPass() {
     const navigate = useNavigate();
 
-    // Default to Pickup (Going to College)
-    const [tripType, setTripType] = useState('pickup');
+    // Trip detection is now AUTOMATIC (Time-Based)
+    // const [tripType, setTripType] = useState('pickup'); // REMOVED
 
     const [lastScan, setLastScan] = useState(null);
     const [scanHistory, setScanHistory] = useState([]);
@@ -20,16 +20,17 @@ export default function ScanPass() {
     const [cameraPermission, setCameraPermission] = useState(null); // 'granted', 'denied', 'prompt'
 
     // Track active TripType in Ref for scanner callback
-    const tripTypeRef = useRef(tripType);
+    // const tripTypeRef = useRef(tripType); // REMOVED
     const isCooldownRef = useRef(false);
     const html5QrCodeRef = useRef(null);
 
-    useEffect(() => {
-        tripTypeRef.current = tripType;
-    }, [tripType]);
+    // useEffect(() => {
+    //     tripTypeRef.current = tripType;
+    // }, [tripType]);
 
     useEffect(() => {
         const initScanner = async () => {
+            // ... (Init logic remains same) ...
             // Cleanup previous instance if exists
             if (html5QrCodeRef.current) {
                 try {
@@ -87,18 +88,21 @@ export default function ScanPass() {
 
     const onScanSuccess = async (decodedText, decodedResult) => {
         if (isCooldownRef.current) return;
-        // ... (Logic remains same) ...
+
+        // ... (Sound/Vibration logic check if needed, omitted in snippet but exists in file) ...
+        // Simplest to just keep existing blocking logic
+
         isCooldownRef.current = true;
         setProcessing(true);
 
         try {
             const token = localStorage.getItem('token');
-            const currentTripType = tripTypeRef.current;
+            // const currentTripType = tripTypeRef.current; // REMOVED
 
-            // USE UNIFIED SCAN ENDPOINT
+            // USE UNIFIED SCAN ENDPOINT (No tripType sent)
             const res = await axios.post(
                 `${API_URL}/driver/scan`,
-                { qrData: decodedText, tripType: currentTripType },
+                { qrData: decodedText },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -126,6 +130,7 @@ export default function ScanPass() {
             const msg = err.response?.data?.message || "Scan failed";
 
             if (err.response?.data?.alreadyScanned) {
+                // ... warning logic ...
                 const warningResult = {
                     success: false,
                     warning: true,
@@ -147,11 +152,13 @@ export default function ScanPass() {
         }
     };
 
+    // ... onScanFailure ...
     const onScanFailure = (err) => {
         // console.warn(err);
     };
 
     const handleEndTrip = async () => {
+        // ... unchanged ...
         if (!window.confirm(`End Trip ? This resets your bus occupancy to 0.`)) return;
 
         setEndingTrip(true);
@@ -196,22 +203,9 @@ export default function ScanPass() {
 
             <div className="scan-content-wrapper turbo-mode">
 
-                {/* TRIP TYPE TOGGLE */}
-                <div className="trip-type-toggle-container">
-                    <div className="toggle-wrapper">
-                        <button
-                            className={`toggle-btn ${tripType === 'pickup' ? 'active' : ''}`}
-                            onClick={() => setTripType('pickup')}
-                        >
-                            🌅 Going to College
-                        </button>
-                        <button
-                            className={`toggle-btn ${tripType === 'drop' ? 'active' : ''}`}
-                            onClick={() => setTripType('drop')}
-                        >
-                            🏠 Going Home
-                        </button>
-                    </div>
+                {/* AUTOMATED TRIP TYPE - NO UI TOGGLE NEEDED */}
+                <div className="trip-type-info" style={{ textAlign: 'center', margin: '10px 0', opacity: 0.7 }}>
+                    <small>Time-Based Trip Detection Active</small>
                 </div>
 
                 <div className="scanner-layout">
@@ -285,7 +279,7 @@ export default function ScanPass() {
 
                         {!lastScan && !error && (
                             <div className="ready-state-msg">
-                                <p>Ready for <strong>{tripType === 'pickup' ? 'Pickup' : 'Drop'}</strong> scan...</p>
+                                <p>Ready to Scan...</p>
                             </div>
                         )}
                     </div>
