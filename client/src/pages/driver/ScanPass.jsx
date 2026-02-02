@@ -214,32 +214,7 @@ export default function ScanPass() {
         <div className="scan-page-modern">
             <header className="scan-header-modern">
                 <button className="back-icon-btn" onClick={() => navigate("/driver")}>
-                    <svg
-                        width="24"
-                        height="24"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                        />
-                    </svg>
-                </button>
-                <div className="header-center-info">
-                    <h2>Rapid Scan</h2>
-                    <span className="session-count">Session: {scanHistory.length}</span>
-                </div>
-
-                <button
-                    className="reset-trip-btn"
-                    onClick={handleEndTrip}
-                    disabled={endingTrip}
-                >
-                    {endingTrip ? "..." : "End Trip"}
+                    back to home
                 </button>
             </header>
 

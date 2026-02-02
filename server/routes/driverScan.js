@@ -172,6 +172,59 @@ router.post('/', auth, isDriver, async (req, res) => {
             status: 'checked-in'
         });
 
+        // Check checkpoint phase before allowing scan
+        const TripCheckpoint = require('../models/TripCheckpoint');
+        const checkpoint = await TripCheckpoint.findOne({
+            driverId: driver._id,
+            date: todayStr,
+            shift: activeShift
+        });
+
+        if (!checkpoint || checkpoint.currentPhase === 'not_started') {
+            return res.status(403).json({
+                message: 'Please start your shift first',
+                action: 'start_shift'
+            });
+        }
+
+        if (checkpoint.currentPhase === 'at_university') {
+            return res.status(403).json({
+                message: 'Scanning disabled. Start return trip to enable scanning',
+                action: 'start_return'
+            });
+        }
+
+        if (checkpoint.currentPhase === 'completed') {
+            return res.status(403).json({
+                message: 'Trip already completed for today'
+            });
+        }
+
+        // Determine which timestamp to update based on current phase
+        const StudentJourneyLog = require('../models/StudentJourneyLog');
+        const phaseField = checkpoint.currentPhase === 'boarding'
+            ? 'onboarded.time'
+            : 'leftForHome.time';
+
+        // Update or create StudentJourneyLog (one document per student per day)
+        await StudentJourneyLog.findOneAndUpdate(
+            { userId: userId, date: todayStr },
+            {
+                $set: {
+                    [phaseField]: getCurrentTime(req),
+                    enrollmentNumber: enrollment,
+                    studentName: studentName,
+                    shift: activeShift,
+                    routeId: entity.route._id,
+                    passType: isBusPass ? 'bus_pass' : 'day_ticket',
+                    passId: id,
+                    ticketType: isDayTicket ? ticket.ticketType : null,
+                    journeyStatus: 'in_progress'
+                }
+            },
+            { upsert: true, new: true }
+        );
+
         // Update Analytics
         await RouteAnalytics.findOneAndUpdate(
             { routeId: entity.route._id, date: todayStr, shift: activeShift },

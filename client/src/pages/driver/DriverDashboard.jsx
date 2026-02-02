@@ -3,6 +3,9 @@ import "./DriverDashboard.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { driver as driverApi } from "../../services/api";
+import CheckpointControl from "./CheckpointControl";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function DriverDashboard() {
   const [loading, setLoading] = useState(true);
@@ -115,7 +118,7 @@ export default function DriverDashboard() {
           )}
         </section>
 
-        {/* Quick Actions Grid - UPDATED FOR SINGLE BUTTON */}
+        {/* Quick Actions Grid */}
         <section className="quick-actions-bar">
           <button
             className="action-card primary"
@@ -137,6 +140,9 @@ export default function DriverDashboard() {
             </div>
           </button>
         </section>
+
+        {/* Checkpoint Control - NEW */}
+        {assignedRoute && <CheckpointControl />}
 
         {/* Live Stats */}
         <section className="stats-overview">

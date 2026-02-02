@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { passes, profile } from '../../services/api';
+import JourneyLogs from './JourneyLogs';
 
 export default function StudentDashboard() {
     const { user, logout } = useAuth();
@@ -9,7 +10,6 @@ export default function StudentDashboard() {
     const [userPasses, setUserPasses] = useState([]);
     const [profileData, setProfileData] = useState(null);
     const [busDetails, setBusDetails] = useState(null);
-    const [boardingLogs, setBoardingLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showPassModal, setShowPassModal] = useState(false);
 
@@ -48,21 +48,6 @@ export default function StudentDashboard() {
                 }
             } catch (err) {
                 console.error("Failed to fetch bus details:", err);
-            }
-
-            // Fetch Boarding History
-            try {
-                const token = localStorage.getItem('token');
-                console.log("Fetching boarding history...");
-                const logRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/attendance/my-history`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const logData = await logRes.json();
-                console.log("Boarding History API Response:", logData);
-                console.log("Number of logs:", logData.length);
-                setBoardingLogs(logData);
-            } catch (err) {
-                console.warn("Failed to fetch boarding history:", err);
             }
 
         } catch (error) {
@@ -301,48 +286,8 @@ export default function StudentDashboard() {
                     </div>
                 </div>
 
-                {/* Boarding History Section */}
-                <div className="card modern-card" style={{ marginTop: '20px' }}>
-                    <h2>📜 Recent Boarding History</h2>
-                    {boardingLogs.length === 0 ? (
-                        <p style={{ color: '#666' }}>No boarding records found yet.</p>
-                    ) : (
-                        <div style={{ overflowX: 'auto', marginTop: '10px' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '2px solid #f3f4f6', textAlign: 'left' }}>
-                                        <th style={{ padding: '8px' }}>Date</th>
-                                        <th style={{ padding: '8px' }}>Time</th>
-                                        <th style={{ padding: '8px' }}>Phase</th>
-                                        <th style={{ padding: '8px' }}>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {boardingLogs.map((log) => (
-                                        <tr key={log._id} style={{ borderBottom: '1px solid #f9fafb' }}>
-                                            <td style={{ padding: '8px' }}>{new Date(log.date).toLocaleDateString()}</td>
-                                            <td style={{ padding: '8px' }}>
-                                                {log.checkInTime ? new Date(log.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                                            </td>
-                                            <td style={{ padding: '8px' }}>
-                                                <span style={{
-                                                    background: log.scanPhase === 'boarding' ? '#dbeafe' : '#fce7f3',
-                                                    color: log.scanPhase === 'boarding' ? '#1e40af' : '#9d174d',
-                                                    padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', textTransform: 'capitalize'
-                                                }}>
-                                                    {log.scanPhase || 'Trip'}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '8px', color: '#15803d' }}>
-                                                ✅ Boarded
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                {/* Journey Logs Section - NEW ERP STYLE */}
+                <JourneyLogs />
 
             </div>
         </div>

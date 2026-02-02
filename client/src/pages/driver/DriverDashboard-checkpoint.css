@@ -1,0 +1,121 @@
+/* Checkpoint Section Styles */
+.checkpoint-section {
+    width: 100%;
+}
+
+.checkpoint-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid #e0f2fe;
+}
+
+.checkpoint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.checkpoint-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.students-badge {
+    background: #dcfce7;
+    color: #15803d;
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.checkpoint-progress-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.checkpoint-progress-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    transition: all 0.2s ease;
+}
+
+.checkpoint-progress-item.completed {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.checkpoint-progress-item:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.checkpoint-icon {
+    font-size: 1.5rem;
+}
+
+.checkpoint-info {
+    flex: 1;
+}
+
+.checkpoint-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.checkpoint-details {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.checkpoint-check {
+    font-size: 1.3rem;
+    color: #22c55e;
+}
+
+.checkpoint-progress-item.pending .checkpoint-check {
+    color: #d1d5db;
+}
+
+.checkpoint-action-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(145deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.checkpoint-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Mobile Adjustments for Checkpoint */
+@media (max-width: 768px) {
+    .checkpoint-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .checkpoint-progress-item {
+        padding: 0.75rem;
+    }
+}

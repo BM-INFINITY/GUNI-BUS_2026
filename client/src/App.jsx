@@ -21,12 +21,17 @@ import BusManagement from './pages/admin/BusManagement';
 import DriverManagement from './pages/admin/DriverManagement';
 import LiveAttendance from './pages/admin/LiveAttendance';
 import CreateDayTicket from './pages/admin/CreateDayTicket';
+import DailyJourneyReport from './pages/admin/DailyJourneyReport';
+import CheckpointAnalytics from './pages/admin/CheckpointAnalytics';
+import ScanHistory from './pages/admin/ScanHistory';
 
 
 //Driver pages
 import DriverDashboard from "./pages/driver/DriverDashboard";
 import ScanPass from './pages/driver/ScanPass';
 import RouteDetails from './pages/driver/RouteDetails';
+import DriverCheckpointForm from './pages/driver/DriverCheckpointForm';
+import MyScanHistory from './pages/driver/MyScanHistory';
 
 const queryClient = new QueryClient();
 
@@ -182,6 +187,33 @@ function AppRoutes() {
                 }
             />
 
+            <Route
+                path="/admin/journey-report"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <DailyJourneyReport />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/checkpoint-analytics"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <CheckpointAnalytics />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/scan-history"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <ScanHistory />
+                    </ProtectedRoute>
+                }
+            />
+
 
             {/* Driver routes */}
             <Route
@@ -207,6 +239,24 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['driver']}>
                         <RouteDetails />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/driver/checkpoint"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <DriverCheckpointForm />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/driver/scan-history"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <MyScanHistory />
                     </ProtectedRoute>
                 }
             />

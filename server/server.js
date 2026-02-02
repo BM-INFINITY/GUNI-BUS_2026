@@ -11,6 +11,10 @@ dotenv.config();
 // Connect to database
 connectDB();
 
+// Initialize absence detection cron job
+const { initAbsenceDetection } = require('./jobs/absenceDetection');
+initAbsenceDetection();
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -50,6 +54,8 @@ const dayTicketsRoutes = require("./routes/dayTicketsApi");
 const dayTicketPaymentRoutes = require("./routes/dayTicketPayment");
 const dayTicketScanRoutes = require("./routes/dayTicketScan");
 const adminTicketsRoutes = require("./routes/adminTickets");
+const tripCheckpointsRoutes = require("./routes/tripCheckpoints");
+const journeyTrackingRoutes = require("./routes/journeyTracking");
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -71,6 +77,10 @@ app.use("/api/tickets", dayTicketsRoutes); // Alias for backward compatibility
 
 app.use("/api/day-ticket-payment", dayTicketPaymentRoutes);
 app.use("/api/day-ticket-scan", dayTicketScanRoutes);
+
+// Journey tracking and checkpoint routes
+app.use("/api/checkpoints", tripCheckpointsRoutes);
+app.use("/api/journey", journeyTrackingRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {

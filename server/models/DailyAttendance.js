@@ -75,6 +75,7 @@ const dailyAttendanceSchema = new mongoose.Schema({
 // INDEXES
 // Fast lookup for today's scans
 dailyAttendanceSchema.index({ passId: 1, date: 1 });
+dailyAttendanceSchema.index({ userId: 1, date: 1 });
 // dailyAttendanceSchema.index({ passId: 1, date: 1, tripType: 1 }, { unique: true }); // REMOVED to allow time-based logic
 
 module.exports = mongoose.model('DailyAttendance', dailyAttendanceSchema);
