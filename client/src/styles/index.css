@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
     margin: 0;
     padding: 0;
@@ -1049,12 +1053,15 @@ button:disabled {
     .form-row {
         grid-template-columns: 1fr;
     }
+
     .applications-grid {
         grid-template-columns: 1fr;
     }
+
     .app-actions {
         grid-template-columns: 1fr;
     }
+
     .pass-item,
     .student-item {
         grid-template-columns: 1fr;
