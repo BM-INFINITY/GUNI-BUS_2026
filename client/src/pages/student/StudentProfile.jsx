@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { profile } from '../../services/api';
+import StudentLayout from '../../components/layout/StudentLayout';
+import { Camera, User, Calendar, Phone, Mail, BookOpen, AlertCircle, CheckCircle, PenLine, LayoutDashboard } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function StudentProfile() {
     const navigate = useNavigate();
@@ -42,7 +45,6 @@ export default function StudentProfile() {
         }
     };
 
-    // Upload photo
     const handlePhotoUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -50,13 +52,11 @@ export default function StudentProfile() {
         setError('');
         setSuccess('');
 
-        // Size validation
         if (file.size > 2 * 1024 * 1024) {
-            setError('❌ Image size is too large. Please upload image smaller than 2MB.');
+            setError('❌ Image size is too large. Max 2MB.');
             return;
         }
 
-        // Type validation
         if (!file.type.startsWith('image/')) {
             setError('❌ Please upload a valid image file (JPG, PNG, JPEG).');
             return;
@@ -82,7 +82,6 @@ export default function StudentProfile() {
     };
 
 
-    // Submit change request
     const handleRequestChange = async () => {
         const requestedChanges = {};
 
@@ -120,7 +119,6 @@ export default function StudentProfile() {
         }
     };
 
-    // Complete profile
     const handleCompleteProfile = async () => {
         if (!profileData.profilePhoto) {
             setError('Please upload profile photo first');
@@ -142,181 +140,216 @@ export default function StudentProfile() {
         return new Date(date).toISOString().split('T')[0];
     };
 
-    if (loading || !profileData) return <div className="loading">Loading profile...</div>;
-
-
+    if (loading || !profileData) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
 
     return (
-        <div className="page-container">
-            <div className="page-header">
-                <button onClick={() => navigate('/student')} className="back-button">← Back</button>
-                <h1>Student Profile</h1>
-                <button className="secondary-btn" onClick={logout}>Logout</button>
-            </div>
+        <StudentLayout>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* Instructions */}
-            <div className="info-card" style={{ background: '#eef6ff', borderLeft: '4px solid #2563eb' }}>
-                <h3>📌 Instructions</h3>
-                <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
-                    <li>Please verify your university details carefully</li>
-                    <li>Upload your profile photo</li>
-                    <li>If any detail is incorrect, raise a correction request</li>
-                    <li>After verification, continue to dashboard</li>
-                </ul>
-            </div>
+                {/* Left Col: Photo & Action */}
+                <div className="space-y-6">
+                    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm text-center">
+                        <div className="relative inline-block mb-6">
+                            <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-slate-100 shadow-inner mx-auto bg-slate-50 flex items-center justify-center group">
+                                {profileData.profilePhoto ? (
+                                    <img
+                                        src={profileData.profilePhoto}
+                                        alt="Profile"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <User className="w-16 h-16 text-slate-300" />
+                                )}
 
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
-
-            {/* University Details Card */}
-            <div className="info-card">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 250px', gap: '30px' }}>
-
-                    {/* Left Side - Details */}
-                    <div>
-                        <h3 style={{ marginBottom: '20px' }}>🎓 University Details</h3>
-
-                        <div className="details-grid">
-                            <div>
-                                <label>Name</label>
-                                <input value={profileData?.name || ''} disabled />
+                                {uploading && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                        <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
+                                    </div>
+                                )}
                             </div>
 
-                            <div>
-                                <label>Date of Birth</label>
-                                <input type="date" value={formatDate(profileData?.dateOfBirth)} disabled />
-                            </div>
-
-                            <div>
-                                <label>Mobile</label>
-                                <input value={profileData?.mobile || ''} disabled />
-                            </div>
-
-                            <div>
-                                <label>Email</label>
-                                <input value={profileData?.email || ''} disabled />
-                            </div>
-
-                            <div>
-                                <label>Department</label>
-                                <input value={profileData?.department || ''} disabled />
-                            </div>
-
-                            <div>
-                                <label>Year</label>
-                                <input value={profileData?.year ? `${profileData.year} Year` : ''} disabled />
-                            </div>
+                            <label className="absolute bottom-2 right-2 p-2.5 bg-indigo-600 text-white rounded-full cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">
+                                <Camera className="w-5 h-5" />
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/jpeg, image/jpg, image/png"
+                                    onChange={handlePhotoUpload}
+                                    disabled={uploading}
+                                />
+                            </label>
                         </div>
 
-                        {/* Correction Note */}
-                        <p style={{ marginTop: '20px', fontSize: '0.9rem', color: '#444' }}>
-                            ⚠ If any detail is incorrect,&nbsp;
-                            <span
-                                style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '600' }}
-                                onClick={() => setShowChangeModal(true)}
+                        <h2 className="text-2xl font-bold text-slate-800">{profileData.name}</h2>
+                        <p className="text-slate-500 font-medium mb-6">{profileData.enrollmentNumber}</p>
+
+                        {!profileData.isProfileComplete ? (
+                            <button
+                                onClick={handleCompleteProfile}
+                                disabled={!profileData.profilePhoto}
+                                className={`w-full py-3 px-4 rounded-xl font-bold transition-all shadow-lg ${profileData.profilePhoto
+                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'
+                                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                    }`}
                             >
-                                click here to raise a correction request
-                            </span>
-                        </p>
+                                {profileData.profilePhoto ? 'Save & Go to Dashboard' : 'Upload Photo to Continue'}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => navigate('/student')}
+                                className="w-full py-3 px-4 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <LayoutDashboard className="w-4 h-4" />
+                                Back to Dashboard
+                            </button>
+                        )}
+
+                        {error && (
+                            <div className="mt-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-lg flex items-center gap-2 text-left animate-fade-in">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                {error}
+                            </div>
+                        )}
+                        {success && (
+                            <div className="mt-4 p-3 bg-emerald-50 text-emerald-600 text-sm rounded-lg flex items-center gap-2 text-left animate-fade-in">
+                                <CheckCircle className="w-4 h-4 shrink-0" />
+                                {success}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Right Side - Photo */}
-                    <div style={{ textAlign: 'center' }}>
-                        <h4>Profile Photo</h4>
+                    <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100">
+                        <h3 className="text-blue-800 font-bold mb-2 flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5" />
+                            Instructions
+                        </h3>
+                        <ul className="space-y-2 text-sm text-blue-700 list-disc list-inside">
+                            <li>Verify your details carefully.</li>
+                            <li>Profile photo must be clear and recent.</li>
+                            <li>Incorrect details? Raise a request.</li>
+                        </ul>
+                    </div>
+                </div>
 
-                        <div style={{ margin: '15px 0' }}>
-                            {profileData.profilePhoto ? (
-                                <img
-                                    src={profileData.profilePhoto}
-                                    alt="Profile"
-                                    style={{
-                                        width: '120px',
-                                        height: '120px',
-                                        borderRadius: '50%',
-                                        objectFit: 'cover',
-                                        border: '3px solid #2563eb'
-                                    }}
-                                />
-                            ) : (
-                                <div style={{
-                                    width: '120px',
-                                    height: '120px',
-                                    borderRadius: '50%',
-                                    background: '#f3f4f6',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '3rem'
-                                }}>
-                                    📷
-                                </div>
-                            )}
+                {/* Right Col: Details Form */}
+                <div className="lg:col-span-2">
+                    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-xl font-bold text-slate-800">Personal Information</h3>
+                            <button
+                                onClick={() => setShowChangeModal(true)}
+                                className="text-indigo-600 text-sm font-medium hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                            >
+                                <PenLine className="w-4 h-4" />
+                                Request Change
+                            </button>
                         </div>
 
-                        <input type="file" accept="image/jpeg, image/jpg, image/png" onChange={handlePhotoUpload} disabled={uploading} />
-                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Only JPG, JPEG, and PNG images are allowed.Max 2MB</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <ProfileField icon={User} label="Full Name" value={profileData.name} />
+                            <ProfileField icon={Calendar} label="Date of Birth" value={formatDate(profileData.dateOfBirth)} />
+                            <ProfileField icon={Phone} label="Mobile Number" value={profileData.mobile} />
+                            <ProfileField icon={Mail} label="Email Address" value={profileData.email} />
+                            <ProfileField icon={BookOpen} label="Department" value={profileData.department} />
+                            <ProfileField icon={Calendar} label="Academic Year" value={`${profileData.year || ''} Year`} />
+                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* Continue Button */}
-            <button
-                className="primary-btn"
-                onClick={handleCompleteProfile}
-                disabled={!profileData.profilePhoto}
-                style={{ width: '100%', marginTop: '25px', padding: '14px' }}
-            >
-                {profileData.profilePhoto ? '✓ Continue to Dashboard' : 'Upload Photo to Continue'}
-            </button>
-
-            {!profileData.profilePhoto && (
-                <p className="warning-text">⚠ Please upload profile photo to proceed</p>
-            )}
 
             {/* Change Request Modal */}
             {showChangeModal && (
-                <div className="modal-overlay" onClick={() => setShowChangeModal(false)}>
-                    <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-                        <h2>Raise Correction Request</h2>
-
-                        {['name', 'dateOfBirth', 'mobile', 'email', 'department', 'year'].map(field => (
-                            <div key={field} className="change-row">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={changeRequest[field]}
-                                        onChange={(e) =>
-                                            setChangeRequest({ ...changeRequest, [field]: e.target.checked })
-                                        }
-                                    />
-                                    {field.toUpperCase()}
-                                </label>
-
-                                {changeRequest[field] && (
-                                    <input
-                                        placeholder={`Enter correct ${field}`}
-                                        value={changedValues[field] || ''}
-                                        onChange={(e) =>
-                                            setChangedValues({ ...changedValues, [field]: e.target.value })
-                                        }
-                                    />
-                                )}
-                            </div>
-                        ))}
-
-                        <textarea
-                            placeholder="Reason for correction"
-                            value={changeReason}
-                            onChange={(e) => setChangeReason(e.target.value)}
-                        />
-
-                        <div className="modal-actions">
-                            <button className="primary-btn" onClick={handleRequestChange}>Submit</button>
-                            <button className="secondary-btn" onClick={() => setShowChangeModal(false)}>Cancel</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowChangeModal(false)}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl"
+                    >
+                        <div className="p-6 border-b border-slate-100 bg-slate-50">
+                            <h2 className="text-xl font-bold text-slate-900">Request Profile Correction</h2>
+                            <p className="text-sm text-slate-500">Select fields to correct and provide valid reason.</p>
                         </div>
-                    </div>
+
+                        <div className="p-6 max-h-[60vh] overflow-y-auto">
+                            <div className="space-y-4">
+                                {['name', 'dateOfBirth', 'mobile', 'email', 'department', 'year'].map(field => (
+                                    <div key={field} className="p-4 rounded-xl border border-slate-200 hover:border-indigo-200 transition-colors bg-white">
+                                        <label className="flex items-center gap-3 cursor-pointer">
+                                            <div className="relative flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-5 h-5 border-2 border-slate-300 rounded text-indigo-600 focus:ring-indigo-200 transition-all checked:bg-indigo-600 checked:border-indigo-600"
+                                                    checked={changeRequest[field]}
+                                                    onChange={(e) => setChangeRequest({ ...changeRequest, [field]: e.target.checked })}
+                                                />
+                                            </div>
+                                            <span className="font-semibold text-slate-700 capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                        </label>
+
+                                        {changeRequest[field] && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                className="mt-3 pl-8"
+                                            >
+                                                <input
+                                                    type={field === 'dateOfBirth' ? 'date' : 'text'}
+                                                    placeholder={`Enter correct ${field}`}
+                                                    value={changedValues[field] || ''}
+                                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all outline-none text-sm"
+                                                    onChange={(e) => setChangedValues({ ...changedValues, [field]: e.target.value })}
+                                                />
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-6">
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Reason for Correction (Required)</label>
+                                <textarea
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all outline-none resize-none h-24"
+                                    placeholder="Briefly explain why these changes are needed..."
+                                    value={changeReason}
+                                    onChange={(e) => setChangeReason(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowChangeModal(false)}
+                                className="px-6 py-2.5 rounded-xl font-medium text-slate-600 hover:bg-slate-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleRequestChange}
+                                className="px-6 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-colors"
+                            >
+                                Submit Request
+                            </button>
+                        </div>
+                    </motion.div>
                 </div>
             )}
-        </div>
+        </StudentLayout>
     );
 }
+
+const ProfileField = ({ icon: Icon, label, value }) => (
+    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+        <div className="flex items-center gap-3 mb-2">
+            <Icon className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</span>
+        </div>
+        <p className="font-semibold text-slate-900 border-l-2 border-indigo-200 pl-3">{value || 'N/A'}</p>
+    </div>
+);

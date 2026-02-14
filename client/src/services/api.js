@@ -58,6 +58,23 @@ export const passes = {
     getMyPasses: () => api.get('/passes/my-passes')
 };
 
+// Student Helpers
+export const students = {
+    getBusDetails: () => api.get('/students/bus-details')
+};
+
+// Day Tickets
+export const dayTickets = {
+    getMyTickets: () => api.get('/day-tickets/my-tickets'),
+    getTodayTicket: () => api.get('/day-tickets/today'),
+    purchase: (data) => api.post('/day-tickets/purchase', data)
+};
+
+// Journey
+export const journey = {
+    getLogs: (days) => api.get(`/journey/my-logs?days=${days}`)
+};
+
 // Payment
 export const payment = {
     createOrder: (data) => api.post('/payment/create-order', data),

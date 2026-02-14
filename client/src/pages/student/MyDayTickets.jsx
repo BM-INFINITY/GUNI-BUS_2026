@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import axios from 'axios';
+import { dayTickets } from '../../services/api';
+import StudentLayout from '../../components/layout/StudentLayout';
+import {
+    Ticket,
+    Calendar,
+    Clock,
+    CheckCircle,
+    AlertCircle,
+    MapPin,
+    QrCode,
+    CreditCard,
+    ArrowRight
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 
 export default function MyDayTickets() {
     const navigate = useNavigate();
@@ -11,7 +24,6 @@ export default function MyDayTickets() {
     const [tickets, setTickets] = useState([]);
     const [todayTicket, setTodayTicket] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showTicketModal, setShowTicketModal] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState(null);
 
     useEffect(() => {
@@ -21,10 +33,7 @@ export default function MyDayTickets() {
 
     const fetchTickets = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/day-tickets/my-tickets`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await dayTickets.getMyTickets();
             setTickets(res.data);
         } catch (error) {
             console.error('Error fetching tickets:', error);
@@ -35,217 +44,196 @@ export default function MyDayTickets() {
 
     const fetchTodayTicket = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`${API_URL}/day-tickets/today`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await dayTickets.getTodayTicket();
             setTodayTicket(res.data);
         } catch (error) {
             console.error('Error fetching today ticket:', error);
         }
     };
 
-    const getStatusColor = (status) => {
+    const getStatusStyle = (status) => {
         switch (status) {
-            case 'active': return '#10b981';
-            case 'used': return '#6b7280';
-            case 'expired': return '#ef4444';
-            case 'pending': return '#f59e0b';
-            default: return '#6b7280';
-        }
-    };
-
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'active': return '✅';
-            case 'used': return '✓';
-            case 'expired': return '⏰';
-            case 'pending': return '⏳';
-            default: return '•';
+            case 'active': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            case 'used': return 'bg-slate-100 text-slate-600 border-slate-200';
+            case 'expired': return 'bg-rose-100 text-rose-700 border-rose-200';
+            case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
+            default: return 'bg-slate-100 text-slate-600 border-slate-200';
         }
     };
 
     if (loading) {
-        return <div className="loading">Loading...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
     }
 
     return (
-        <div className="dashboard modern-dashboard">
-            {/* Header */}
-            <header className="modern-header">
-                <div className="header-content">
-                    <div className="header-left">
-                        <button className="secondary-btn" onClick={() => navigate('/student')}>
-                            ← Back
-                        </button>
-                        <h1>🎟️ My Day Tickets</h1>
-                    </div>
-
+        <StudentLayout>
+            <div className="max-w-4xl mx-auto space-y-8">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                        <Ticket className="w-8 h-8 text-indigo-600" />
+                        My Day Tickets
+                    </h1>
+                    <p className="text-slate-500 mt-2 ml-11">Manage and view your daily travel passes.</p>
                 </div>
-            </header>
 
-            <div className="dashboard-content modern-content">
                 {/* Today's Active Ticket */}
                 {todayTicket ? (
-                    <div className="card modern-card" style={{ background: '#ecfeff', borderLeft: '4px solid #06b6d4' }}>
-                        <h2>🎫 Today's Active Ticket</h2>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-1 text-white shadow-xl overflow-hidden relative"
+                    >
+                        <div className="bg-white/10 backdrop-blur-sm p-6 sm:p-8 rounded-[20px]">
+                            <div className="flex flex-col md:flex-row justify-between gap-8">
+                                <div className="flex-1 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold border border-white/10 flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                                            Active Now
+                                        </div>
+                                        <p className="text-white/80 font-mono tracking-wider text-sm">{todayTicket.referenceNumber}</p>
+                                    </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', gap: '20px' }}>
-                            <div style={{ flex: 1 }}>
-                                <p><strong>Route:</strong> {todayTicket.route?.routeName}</p>
-                                <p><strong>Stop:</strong> {todayTicket.selectedStop}</p>
-                                <p><strong>Shift:</strong> {todayTicket.shift === 'morning' ? 'Morning' : 'Afternoon'}</p>
-                                <p><strong>Type:</strong> {todayTicket.ticketType === 'single' ? 'Single Trip' : 'Round Trip'}</p>
-                                <p><strong>Scans Used:</strong> {todayTicket.scanCount} / {todayTicket.maxScans}</p>
-                                <p><strong>Reference:</strong> {todayTicket.referenceNumber}</p>
-                            </div>
+                                    <div>
+                                        <p className="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-1">Route</p>
+                                        <h3 className="text-2xl font-bold">{todayTicket.route?.routeName}</h3>
+                                        <p className="text-white/70 flex items-center gap-2 mt-1">
+                                            <MapPin className="w-4 h-4" />
+                                            {todayTicket.selectedStop}
+                                        </p>
+                                    </div>
 
-                            <div style={{ textAlign: 'center' }}>
-                                <img src={todayTicket.qrCode} width="200" alt="QR" style={{ borderRadius: '8px' }} />
-                                <p style={{ fontSize: '0.8rem', marginTop: '10px' }}>Scan at bus entry</p>
-                                {todayTicket.scanCount < todayTicket.maxScans ? (
-                                    <p style={{ color: '#10b981', fontWeight: 'bold' }}>
-                                        {todayTicket.maxScans - todayTicket.scanCount} scan(s) remaining
-                                    </p>
-                                ) : (
-                                    <p style={{ color: '#ef4444', fontWeight: 'bold' }}>
-                                        All scans used
-                                    </p>
-                                )}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/10 p-3 rounded-xl border border-white/5">
+                                            <p className="text-indigo-200 text-xs uppercase mb-1">Shift</p>
+                                            <p className="font-semibold capitalize">{todayTicket.shift}</p>
+                                        </div>
+                                        <div className="bg-white/10 p-3 rounded-xl border border-white/5">
+                                            <p className="text-indigo-200 text-xs uppercase mb-1">Type</p>
+                                            <p className="font-semibold capitalize">{todayTicket.ticketType}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 bg-white/20 p-3 rounded-xl">
+                                        <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-emerald-400 transition-all duration-500"
+                                                style={{ width: `${(todayTicket.scanCount / todayTicket.maxScans) * 100}%` }}
+                                            ></div>
+                                        </div>
+                                        <span className="text-sm font-bold">{todayTicket.scanCount}/{todayTicket.maxScans} Scans</span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setSelectedTicket(todayTicket)}
+                                        className="w-full bg-white text-indigo-700 py-3 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-lg"
+                                    >
+                                        View Full Ticket
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-col items-center justify-center bg-white p-4 rounded-2xl shadow-lg max-w-[240px] mx-auto md:mx-0">
+                                    <img src={todayTicket.qrCode} alt="QR Code" className="w-full h-auto" />
+                                    <p className="text-slate-400 text-xs mt-2 text-center">Scan at bus entry</p>
+                                </div>
                             </div>
                         </div>
-
-                        <button
-                            className="primary-btn"
-                            style={{ marginTop: '15px' }}
-                            onClick={() => {
-                                setSelectedTicket(todayTicket);
-                                setShowTicketModal(true);
-                            }}
-                        >
-                            View Full Ticket
-                        </button>
-                    </div>
+                    </motion.div>
                 ) : (
-                    <div className="card modern-card">
-                        <h2>No Active Ticket for Today</h2>
-                        <p>Purchase a day ticket to travel today</p>
-                        <button className="primary-btn large" onClick={() => navigate('/student/apply-day-ticket')}>
+                    <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm text-center">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                            <Ticket className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">No Active Ticket</h3>
+                        <p className="text-slate-500 mb-6">You don't have a valid ticket for today. Traveling today?</p>
+                        <button
+                            onClick={() => navigate('/student/apply-day-ticket')}
+                            className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg hover:-translate-y-1"
+                        >
                             Purchase Day Ticket
                         </button>
                     </div>
                 )}
 
-                {/* Pending Tickets (Admin Created - Awaiting Payment) */}
+                {/* Pending Payments */}
                 {tickets.filter(t => t.paymentStatus === 'pending').length > 0 && (
-                    <div className="card modern-card" style={{ marginTop: '20px', background: '#fff7ed', borderLeft: '4px solid #f59e0b' }}>
-                        <h2>⏳ Pending Payment</h2>
-                        <p style={{ color: '#92400e', marginBottom: '15px' }}>
-                            These tickets were created by admin. Please complete payment to activate.
-                        </p>
-
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-amber-500" />
+                            Pending Payments
+                        </h3>
                         {tickets.filter(t => t.paymentStatus === 'pending').map(ticket => (
-                            <div
-                                key={ticket._id}
-                                style={{
-                                    padding: '15px',
-                                    border: '2px solid #fed7aa',
-                                    borderRadius: '8px',
-                                    marginBottom: '10px',
-                                    background: 'white'
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                    <div>
-                                        <strong style={{ fontSize: '1.1rem' }}>{new Date(ticket.travelDate).toLocaleDateString()}</strong>
-                                        <p style={{ margin: '5px 0 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
-                                            {ticket.route?.routeName} • {ticket.shift} • {ticket.ticketType === 'single' ? 'Single' : 'Round'} Trip
-                                        </p>
-                                        <p style={{ margin: '5px 0 0 0', color: '#6b7280', fontSize: '0.85rem' }}>
-                                            Stop: {ticket.selectedStop}
-                                        </p>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                                            ₹{ticket.amount}
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: '#92400e' }}>
-                                            Ref: {ticket.referenceNumber}
-                                        </div>
-                                    </div>
+                            <div key={ticket._id} className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div>
+                                    <h4 className="font-bold text-amber-900 text-lg mb-1">{new Date(ticket.travelDate).toLocaleDateString()}</h4>
+                                    <p className="text-amber-800 text-sm">
+                                        {ticket.route?.routeName} • {ticket.shift} • {ticket.ticketType === 'single' ? 'One Way' : 'Round Trip'}
+                                    </p>
+                                    <p className="text-amber-700 font-mono text-xs mt-1">Ref: {ticket.referenceNumber}</p>
                                 </div>
-
-                                <button
-                                    className="primary-btn"
-                                    style={{ width: '100%', background: '#f59e0b', borderColor: '#f59e0b' }}
-                                    onClick={() => {
-                                        // Navigate to payment page with ticket ID
-                                        navigate(`/student/apply-day-ticket?payTicket=${ticket._id}`);
-                                    }}
-                                >
-                                    💳 Pay Now - ₹{ticket.amount}
-                                </button>
+                                <div className="flex items-center gap-4 w-full md:w-auto">
+                                    <div className="text-right">
+                                        <span className="block text-2xl font-bold text-amber-700">₹{ticket.amount}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => navigate(`/student/apply-day-ticket?payTicket=${ticket._id}`)}
+                                        className="flex-1 md:flex-none px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md transition-colors whitespace-nowrap"
+                                    >
+                                        Ids Pay Now
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 )}
 
-                {/* Ticket History */}
-                <div className="card modern-card" style={{ marginTop: '20px' }}>
-                    <h2>📋 Ticket History</h2>
+                {/* History */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-slate-500" />
+                        Ticket History
+                    </h3>
 
                     {tickets.length === 0 ? (
-                        <p style={{ color: '#6b7280' }}>No tickets purchased yet</p>
+                        <div className="text-center py-12 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                            No tickets found.
+                        </div>
                     ) : (
-                        <div style={{ marginTop: '15px' }}>
+                        <div className="grid grid-cols-1 gap-4">
                             {tickets.map(ticket => (
                                 <div
                                     key={ticket._id}
-                                    style={{
-                                        padding: '15px',
-                                        border: '1px solid #e5e7eb',
-                                        borderRadius: '8px',
-                                        marginBottom: '10px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                    onClick={() => {
-                                        setSelectedTicket(ticket);
-                                        setShowTicketModal(true);
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                    onClick={() => setSelectedTicket(ticket)}
+                                    className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group"
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <span style={{ fontSize: '1.2rem' }}>
-                                                    {getStatusIcon(ticket.status)}
-                                                </span>
-                                                <div>
-                                                    <strong>{new Date(ticket.travelDate).toLocaleDateString()}</strong>
-                                                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-                                                        {ticket.route?.routeName} • {ticket.ticketType === 'single' ? 'Single' : 'Round'} Trip
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0 ${ticket.status === 'active' ? 'bg-emerald-100 text-emerald-600' :
+                                                ticket.status === 'expired' ? 'bg-rose-100 text-rose-600' :
+                                                    'bg-slate-100 text-slate-500'
+                                                }`}>
+                                                {new Date(ticket.travelDate).getDate()}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                                                        {new Date(ticket.travelDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                                                     </p>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${getStatusStyle(ticket.status)}`}>
+                                                        {ticket.status}
+                                                    </span>
                                                 </div>
+                                                <p className="text-sm text-slate-500">
+                                                    {ticket.route?.routeName} • {ticket.ticketType}
+                                                </p>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <span
-                                                style={{
-                                                    padding: '4px 12px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '0.85rem',
-                                                    fontWeight: 'bold',
-                                                    background: getStatusColor(ticket.status) + '20',
-                                                    color: getStatusColor(ticket.status)
-                                                }}
-                                            >
-                                                {ticket.status.toUpperCase()}
-                                            </span>
-                                            <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
-                                                {ticket.scanCount}/{ticket.maxScans} scans
-                                            </p>
+                                        <div className="text-right">
+                                            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
                                         </div>
                                     </div>
                                 </div>
@@ -253,65 +241,63 @@ export default function MyDayTickets() {
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Ticket Modal */}
-            {showTicketModal && selectedTicket && (
-                <div className="modal-overlay" onClick={() => setShowTicketModal(false)}>
-                    <div
-                        className="modal-box"
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ maxWidth: '500px' }}
-                    >
-                        <h2 style={{ textAlign: 'center' }}>🎟️ Day Ticket Details</h2>
+                {/* Ticket Details Modal */}
+                <AnimatePresence>
+                    {selectedTicket && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedTicket(null)}>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+                            >
+                                <div className="bg-indigo-600 p-6 text-white text-center">
+                                    <h3 className="text-lg font-medium opacity-90">Day Ticket</h3>
+                                    <h2 className="text-3xl font-bold mt-1">{new Date(selectedTicket.travelDate).toLocaleDateString()}</h2>
+                                </div>
 
-                        <div style={{ marginTop: '20px' }}>
-                            <p><strong>Reference Number:</strong> {selectedTicket.referenceNumber}</p>
-                            <p><strong>Travel Date:</strong> {new Date(selectedTicket.travelDate).toLocaleDateString()}</p>
-                            <p><strong>Route:</strong> {selectedTicket.route?.routeName}</p>
-                            <p><strong>Boarding Stop:</strong> {selectedTicket.selectedStop}</p>
-                            <p><strong>Shift:</strong> {selectedTicket.shift}</p>
-                            <p><strong>Ticket Type:</strong> {selectedTicket.ticketType === 'single' ? 'Single Trip' : 'Round Trip'}</p>
-                            <p><strong>Amount Paid:</strong> ₹{selectedTicket.amount}</p>
-                            <p><strong>Status:</strong> <span style={{ color: getStatusColor(selectedTicket.status), fontWeight: 'bold' }}>
-                                {selectedTicket.status.toUpperCase()}
-                            </span></p>
-                            <p><strong>Scans Used:</strong> {selectedTicket.scanCount} / {selectedTicket.maxScans}</p>
-                        </div>
-
-                        {selectedTicket.qrCode && selectedTicket.status === 'active' && (
-                            <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                                <img src={selectedTicket.qrCode} width="250" alt="QR" />
-                                <p>Scan at bus entry</p>
-                            </div>
-                        )}
-
-                        {selectedTicket.scans && selectedTicket.scans.length > 0 && (
-                            <div style={{ marginTop: '20px' }}>
-                                <h3>Scan History</h3>
-                                {selectedTicket.scans.map((scan, index) => (
-                                    <div key={index} style={{ padding: '10px', background: '#f9fafb', borderRadius: '6px', marginBottom: '8px' }}>
-                                        <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                                            <strong>Scan {index + 1}:</strong> {scan.tripType === 'pickup' ? 'Going to College' : 'Going Home'}
-                                        </p>
-                                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-                                            {new Date(scan.scannedAt).toLocaleString()}
-                                        </p>
+                                <div className="p-6">
+                                    <div className="space-y-4 mb-6">
+                                        <div className="flex justify-between py-2 border-b border-slate-100">
+                                            <span className="text-slate-500">Route</span>
+                                            <span className="font-medium text-slate-900 text-right">{selectedTicket.route?.routeName}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-slate-100">
+                                            <span className="text-slate-500">Stop</span>
+                                            <span className="font-medium text-slate-900 text-right">{selectedTicket.selectedStop}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-slate-100">
+                                            <span className="text-slate-500">Type</span>
+                                            <span className="font-medium text-slate-900 capitalize">{selectedTicket.ticketType} Trip</span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-slate-100">
+                                            <span className="text-slate-500">Status</span>
+                                            <span className={`font-bold capitalize ${selectedTicket.status === 'active' ? 'text-emerald-600' : 'text-slate-600'
+                                                }`}>{selectedTicket.status}</span>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
 
-                        <button
-                            className="secondary-btn"
-                            style={{ marginTop: '15px', width: '100%' }}
-                            onClick={() => setShowTicketModal(false)}
-                        >
-                            Close
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
+                                    {selectedTicket.qrCode && selectedTicket.status === 'active' && (
+                                        <div className="flex flex-col items-center justify-center mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                            <img src={selectedTicket.qrCode} alt="QR Code" className="w-40 h-40 object-contain mix-blend-multiply" />
+                                            <p className="text-xs text-slate-400 mt-2">Scan this QR code</p>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => setSelectedTicket(null)}
+                                        className="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </StudentLayout>
     );
 }

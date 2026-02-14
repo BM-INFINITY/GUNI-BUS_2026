@@ -9,6 +9,8 @@ import StudentProfile from './pages/student/StudentProfile';
 import ApplyPass from './pages/student/ApplyPass';
 import ApplyDayTicket from './pages/student/ApplyDayTicket';
 import MyDayTickets from './pages/student/MyDayTickets';
+import BusInfoPage from './pages/student/BusInfoPage';
+import JourneyLogs from './pages/student/JourneyLogs';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -115,6 +117,24 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['student']}>
                         <MyDayTickets />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/student/bus-info"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <BusInfoPage />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/student/journey-history"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <JourneyLogs />
                     </ProtectedRoute>
                 }
             />

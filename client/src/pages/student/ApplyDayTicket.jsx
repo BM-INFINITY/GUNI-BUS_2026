@@ -2,10 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
+import StudentLayout from '../../components/layout/StudentLayout';
+import {
+    Ticket,
+    Bus,
+    MapPin,
+    Clock,
+    Calendar,
+    AlertCircle,
+    CheckCircle,
+    ArrowRight,
+    Wallet
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Razorpay script loader (SAME AS BUS PASS)
 const loadRazorpayScript = () => {
     return new Promise((resolve) => {
         const script = document.createElement('script');
@@ -47,7 +59,6 @@ export default function ApplyDayTicket() {
         try {
             const token = localStorage.getItem('token');
 
-            // If paying for existing ticket, fetch that ticket
             if (payTicketId) {
                 const ticketRes = await axios.get(`${API_URL}/day-tickets/my-tickets`, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -55,7 +66,6 @@ export default function ApplyDayTicket() {
                 const ticket = ticketRes.data.find(t => t._id === payTicketId);
 
                 if (ticket && ticket.paymentStatus === 'pending') {
-                    // Populate route info if not already populated
                     if (ticket.route && typeof ticket.route === 'object') {
                         ticket.routeName = ticket.route.routeName;
                         ticket.routeNumber = ticket.route.routeNumber;
@@ -75,16 +85,15 @@ export default function ApplyDayTicket() {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
                 axios.get(`${API_URL}/routes`),
-                axios.get(`${API_URL}/passes/my-passes`, { // Check for existing passes
+                axios.get(`${API_URL}/passes/my-passes`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
 
-            // check for active pass
             const hasActivePass = passesRes.data.some(p => p.status === 'approved');
             if (hasActivePass) {
                 alert("Restricted: You already have an active Bus Pass.");
-                navigate('/student'); // Bounce back to dashboard
+                navigate('/student');
                 return;
             }
 
@@ -119,8 +128,6 @@ export default function ApplyDayTicket() {
             }
 
             const token = localStorage.getItem('token');
-
-            // Create Razorpay order
             const orderResponse = await axios.post(
                 `${API_URL}/day-ticket-payment/create-order`,
                 { ticketApplicationId: applicationId },
@@ -128,8 +135,6 @@ export default function ApplyDayTicket() {
             );
 
             const orderData = orderResponse.data;
-
-            // Razorpay options (SAME AS BUS PASS)
             const options = {
                 key: import.meta.env.VITE_RAZORPAY_KEY_ID,
                 amount: orderData.amount * 100,
@@ -139,7 +144,6 @@ export default function ApplyDayTicket() {
                 order_id: orderData.orderId,
                 handler: async function (response) {
                     try {
-                        // Verify payment
                         const verifyResponse = await axios.post(
                             `${API_URL}/day-ticket-payment/verify`,
                             {
@@ -159,8 +163,7 @@ export default function ApplyDayTicket() {
                             setSubmitting(false);
                         }
                     } catch (error) {
-                        console.error('Payment verification error:', error);
-                        setError('Payment verification failed: ' + (error.response?.data?.message || error.message));
+                        setError('Payment verification failed');
                         setSubmitting(false);
                     }
                 },
@@ -206,15 +209,12 @@ export default function ApplyDayTicket() {
 
         try {
             const token = localStorage.getItem('token');
-
-            // Create ticket application
             const response = await axios.post(
                 `${API_URL}/day-tickets/apply`,
                 formData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // Initiate payment
             await handlePayment({
                 applicationId: response.data.applicationId,
                 amount: response.data.amount,
@@ -233,264 +233,220 @@ export default function ApplyDayTicket() {
     };
 
     if (loading) {
-        return <div className="loading">Loading...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
     }
 
     return (
-        <div className="page-container modern-page">
-            <div className="page-header modern">
-                <button onClick={() => navigate('/student')} className="back-btn">← Back</button>
-                <div className="page-title">
-                    <h1>🎟️ {pendingTicket ? 'Complete Payment' : 'Purchase One-Day Ticket'}</h1>
-                    <p>{pendingTicket ? 'Pay for admin-created ticket' : 'Valid for one calendar day only'}</p>
-                </div>
-            </div>
-
-            {error && <div className="alert alert-error">{error}</div>}
-            {success && (
-                <div className="alert alert-success">
-                    <h3>✅ {success}</h3>
-                    <p>Redirecting to your tickets...</p>
-                </div>
-            )}
-
-            {/* Pending Ticket Payment */}
-            {pendingTicket && (
-                <div className="form-card modern-card" style={{ background: '#fff7ed', borderLeft: '4px solid #f59e0b' }}>
-                    <h2>⏳ Pending Ticket - Complete Payment</h2>
-                    <p style={{ color: '#92400e', marginBottom: '20px' }}>
-                        This ticket was created by admin. Please complete payment to activate.
+        <StudentLayout>
+            <div className="max-w-3xl mx-auto">
+                <div className="mb-8">
+                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                        <Ticket className="w-8 h-8 text-indigo-600" />
+                        {pendingTicket ? 'Complete Ticket Payment' : 'Purchase One-Day Ticket'}
+                    </h1>
+                    <p className="text-slate-500 mt-2 ml-11">
+                        {pendingTicket ? 'Complete your payment to activate this ticket.' : 'Get a quick pass for a single day of travel.'}
                     </p>
+                </div>
 
-                    <div style={{ background: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-                        <h3>Ticket Details</h3>
-                        <div style={{ display: 'grid', gap: '10px', marginTop: '15px' }}>
-                            <p><strong>Travel Date:</strong> {new Date(pendingTicket.travelDate).toLocaleDateString()}</p>
-                            <p><strong>Route:</strong> {pendingTicket.routeName} ({pendingTicket.routeNumber})</p>
-                            <p><strong>Stop:</strong> {pendingTicket.selectedStop}</p>
-                            <p><strong>Shift:</strong> {pendingTicket.shift === 'morning' ? '🌅 Morning' : '🌆 Afternoon'}</p>
-                            <p><strong>Ticket Type:</strong> {pendingTicket.ticketType === 'single' ? 'Single Trip' : 'Round Trip'}</p>
-                            <p><strong>Reference:</strong> <code>{pendingTicket.referenceNumber}</code></p>
-                            <div style={{ marginTop: '15px', padding: '15px', background: '#f59e0b20', borderRadius: '8px' }}>
-                                <p style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#f59e0b' }}>
-                                    Amount to Pay: ₹{pendingTicket.amount}
+                <AnimatePresence>
+                    {(error || success) && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className={`bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full text-center ${error ? 'border-t-4 border-rose-500' : 'border-t-4 border-emerald-500'}`}
+                            >
+                                <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${error ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                    {error ? <AlertCircle className="w-8 h-8" /> : <CheckCircle className="w-8 h-8" />}
+                                </div>
+                                <h3 className={`text-lg font-bold mb-2 ${error ? 'text-slate-800' : 'text-slate-800'}`}>
+                                    {error ? 'Action Required' : 'Success!'}
+                                </h3>
+                                <p className="text-slate-500 mb-6">
+                                    {error || success}
                                 </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        className="submit-btn large"
-                        onClick={() => handlePayment({
-                            applicationId: pendingTicket._id,
-                            amount: pendingTicket.amount,
-                            referenceNumber: pendingTicket.referenceNumber
-                        })}
-                        disabled={submitting}
-                        style={{ background: '#f59e0b', borderColor: '#f59e0b' }}
-                    >
-                        {submitting ? 'Processing...' : `💳 Pay ₹${pendingTicket.amount} Now`}
-                    </button>
-                </div>
-            )}
-
-            {/* Student Profile Card (SAME AS BUS PASS) */}
-            {!pendingTicket && profileData && (
-                <div className="info-card" style={{ marginBottom: '20px' }}>
-                    <h3>👤 Your Details</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '20px', marginTop: '15px' }}>
-                        <div>
-                            {profileData.profilePhoto ? (
-                                <img
-                                    src={profileData.profilePhoto}
-                                    alt="Profile"
-                                    style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #4f46e5' }}
-                                />
-                            ) : (
-                                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>
-                                    📷
-                                </div>
-                            )}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <div>
-                                <strong style={{ display: 'block', color: '#6b7280', fontSize: '0.85rem' }}>Name</strong>
-                                <span>{profileData.name}</span>
-                            </div>
-                            <div>
-                                <strong style={{ display: 'block', color: '#6b7280', fontSize: '0.85rem' }}>Enrollment</strong>
-                                <span>{user.enrollmentNumber}</span>
-                            </div>
-                            <div>
-                                <strong style={{ display: 'block', color: '#6b7280', fontSize: '0.85rem' }}>Mobile</strong>
-                                <span>{profileData.mobile}</span>
-                            </div>
-                            <div>
-                                <strong style={{ display: 'block', color: '#6b7280', fontSize: '0.85rem' }}>Email</strong>
-                                <span>{profileData.email}</span>
-                            </div>
-                            <div>
-                                <strong style={{ display: 'block', color: '#6b7280', fontSize: '0.85rem' }}>Department</strong>
-                                <span>{profileData.department}</span>
-                            </div>
-                            <div>
-                                <strong style={{ display: 'block', color: '#6b7280', fontSize: '0.85rem' }}>Year</strong>
-                                <span>{profileData.year} Year</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Application Form */}
-            {!pendingTicket && (
-                <form onSubmit={handleSubmit} className="modern-form">
-                    <div className="form-group">
-                        <label>Travel Date *</label>
-                        <input
-                            type="date"
-                            value={formData.travelDate}
-                            min={new Date().toISOString().split('T')[0]}
-                            onChange={(e) => setFormData({ ...formData, travelDate: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Select Route *</label>
-                        <select
-                            value={formData.routeId}
-                            onChange={handleRouteChange}
-                            required
-                        >
-                            <option value="">-- Select Route --</option>
-                            {routes.map(route => (
-                                <option key={route._id} value={route._id}>
-                                    {route.routeName} ({route.routeNumber})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {selectedRoute && (
-                        <>
-                            <div className="form-group">
-                                <label>Select Boarding Point *</label>
-                                <select
-                                    value={formData.selectedStop}
-                                    onChange={(e) => setFormData({ ...formData, selectedStop: e.target.value })}
-                                    required
+                                <button
+                                    onClick={() => { setError(''); setSuccess(''); }}
+                                    className={`w-full py-3 rounded-xl font-bold text-white transition-colors ${error ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                                 >
-                                    <option value="">-- Select Stop --</option>
-                                    {selectedRoute.shifts?.[0]?.stops?.map((stop, index) => (
-                                        <option key={index} value={stop.name}>
-                                            {stop.name} {stop.arrivalTime && `(${stop.arrivalTime})`}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="form-group">
-                                <label>Select Shift *</label>
-                                <div style={{ display: 'flex', gap: '15px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '15px', border: '2px solid #e5e7eb', borderRadius: '8px', flex: 1 }}>
-                                        <input
-                                            type="radio"
-                                            value="morning"
-                                            checked={formData.shift === 'morning'}
-                                            onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
-                                            style={{ marginRight: '10px' }}
-                                        />
-                                        <div>
-                                            <strong>🌅 Morning Shift</strong>
-                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>8:30 AM - 2:10 PM</p>
-                                        </div>
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '15px', border: '2px solid #e5e7eb', borderRadius: '8px', flex: 1 }}>
-                                        <input
-                                            type="radio"
-                                            value="afternoon"
-                                            checked={formData.shift === 'afternoon'}
-                                            onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
-                                            style={{ marginRight: '10px' }}
-                                        />
-                                        <div>
-                                            <strong>🌆 Afternoon Shift</strong>
-                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>11:40 AM - 5:20 PM</p>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label>Ticket Type *</label>
-                                <div style={{ display: 'flex', gap: '15px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '15px', border: '2px solid #e5e7eb', borderRadius: '8px', flex: 1 }}>
-                                        <input
-                                            type="radio"
-                                            value="single"
-                                            checked={formData.ticketType === 'single'}
-                                            onChange={(e) => setFormData({ ...formData, ticketType: e.target.value })}
-                                            style={{ marginRight: '10px' }}
-                                        />
-                                        <div>
-                                            <strong>➡️ Single Trip</strong>
-                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>One scan only</p>
-                                            {selectedRoute.ticketPrices?.single && (
-                                                <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 'bold', color: '#4f46e5' }}>
-                                                    ₹{selectedRoute.ticketPrices.single}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '15px', border: '2px solid #e5e7eb', borderRadius: '8px', flex: 1 }}>
-                                        <input
-                                            type="radio"
-                                            value="round"
-                                            checked={formData.ticketType === 'round'}
-                                            onChange={(e) => setFormData({ ...formData, ticketType: e.target.value })}
-                                            style={{ marginRight: '10px' }}
-                                        />
-                                        <div>
-                                            <strong>🔄 Round Trip</strong>
-                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>Two scans (pickup + drop)</p>
-                                            {selectedRoute.ticketPrices?.round && (
-                                                <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 'bold', color: '#4f46e5' }}>
-                                                    ₹{selectedRoute.ticketPrices.round}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Price Display */}
-                            <div style={{ background: '#f0fdf4', border: '2px solid #10b981', borderRadius: '8px', padding: '20px', marginTop: '20px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <h3 style={{ margin: 0, color: '#047857' }}>Ticket Price</h3>
-                                        <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.9rem' }}>
-                                            Valid for {formData.travelDate}
-                                        </p>
-                                    </div>
-                                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#047857' }}>
-                                        ₹{getTicketPrice()}
-                                    </div>
-                                </div>
-                            </div>
-                        </>
+                                    {error ? 'Dismiss' : 'Continue'}
+                                </button>
+                            </motion.div>
+                        </div>
                     )}
+                </AnimatePresence>
 
-                    <button
-                        type="submit"
-                        disabled={submitting || !profileData?.isProfileComplete || !selectedRoute}
-                        className="primary-btn large"
-                        style={{ width: '100%', marginTop: '20px', padding: '15px', fontSize: '1.1rem' }}
-                    >
-                        {submitting ? 'Processing...' : selectedRoute ? `Pay ₹${getTicketPrice()} & Get Ticket` : 'Select Route to Continue'}
-                    </button>
-                </form>
-            )}
-        </div>
+                {/* Pending Ticket Card */}
+                {pendingTicket && (
+                    <div className="bg-amber-50 rounded-3xl p-6 border border-amber-200 shadow-sm mb-6">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-amber-100 rounded-xl text-amber-600">
+                                <Clock className="w-6 h-6" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-amber-900 mb-1">Payment Pending</h3>
+                                <p className="text-amber-700 text-sm mb-4">This ticket is reserved but not active yet.</p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/50 p-4 rounded-xl mb-6 border border-amber-100/50">
+                                    <div>
+                                        <p className="text-xs text-amber-600 uppercase font-bold tracking-wider">Route</p>
+                                        <p className="font-semibold text-amber-900">{pendingTicket.routeName}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-amber-600 uppercase font-bold tracking-wider">Date</p>
+                                        <p className="font-semibold text-amber-900">{new Date(pendingTicket.travelDate).toLocaleDateString()}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-amber-600 uppercase font-bold tracking-wider">Amount</p>
+                                        <p className="font-bold text-xl text-amber-700">₹{pendingTicket.amount}</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handlePayment({
+                                        applicationId: pendingTicket._id,
+                                        amount: pendingTicket.amount,
+                                        referenceNumber: pendingTicket.referenceNumber
+                                    })}
+                                    disabled={submitting}
+                                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-200 transition-all active:scale-95"
+                                >
+                                    {submitting ? 'Processing...' : 'Pay Now & Activate'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {!pendingTicket && (
+                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+
+                            {/* Date Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Travel Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.travelDate}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    onChange={(e) => setFormData({ ...formData, travelDate: e.target.value })}
+                                    required
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all outline-none"
+                                />
+                            </div>
+
+                            {/* Route Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Select Route</label>
+                                <div className="relative">
+                                    <select
+                                        value={formData.routeId}
+                                        onChange={handleRouteChange}
+                                        required
+                                        className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all outline-none appearance-none"
+                                    >
+                                        <option value="">-- Choose Route --</option>
+                                        {routes.map(route => (
+                                            <option key={route._id} value={route._id}>
+                                                {route.routeName} ({route.routeNumber})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
+                                </div>
+                            </div>
+
+                            {selectedRoute && (
+                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-6">
+
+                                    {/* Stop Selection */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Select Stop</label>
+                                        <div className="relative">
+                                            <select
+                                                value={formData.selectedStop}
+                                                onChange={(e) => setFormData({ ...formData, selectedStop: e.target.value })}
+                                                required
+                                                className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all outline-none appearance-none"
+                                            >
+                                                <option value="">-- Choose Stop --</option>
+                                                {selectedRoute.shifts?.[0]?.stops?.map((stop, index) => (
+                                                    <option key={index} value={stop.name}>
+                                                        {stop.name} {stop.arrivalTime && `(${stop.arrivalTime})`}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▼</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Shift Selection */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <label className={`cursor-pointer p-3 rounded-xl border-2 transition-all text-center ${formData.shift === 'morning' ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}>
+                                            <input type="radio" name="shift" value="morning" checked={formData.shift === 'morning'} onChange={(e) => setFormData({ ...formData, shift: e.target.value })} className="hidden" />
+                                            <span className="font-bold block">Morning</span>
+                                        </label>
+                                        <label className={`cursor-pointer p-3 rounded-xl border-2 transition-all text-center ${formData.shift === 'afternoon' ? 'border-indigo-400 bg-indigo-50 text-indigo-800' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}>
+                                            <input type="radio" name="shift" value="afternoon" checked={formData.shift === 'afternoon'} onChange={(e) => setFormData({ ...formData, shift: e.target.value })} className="hidden" />
+                                            <span className="font-bold block">Afternoon</span>
+                                        </label>
+                                    </div>
+
+                                    {/* Ticket Type */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <label className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${formData.ticketType === 'single' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-100 hover:border-slate-200'}`}>
+                                            <input type="radio" name="ticketType" value="single" checked={formData.ticketType === 'single'} onChange={(e) => setFormData({ ...formData, ticketType: e.target.value })} className="hidden" />
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="font-bold text-slate-700">Single Trip</span>
+                                                <span className="font-bold text-indigo-600">₹{selectedRoute.ticketPrices?.single}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-500">One-way journey only.</p>
+                                        </label>
+
+                                        <label className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${formData.ticketType === 'round' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-100 hover:border-slate-200'}`}>
+                                            <input type="radio" name="ticketType" value="round" checked={formData.ticketType === 'round'} onChange={(e) => setFormData({ ...formData, ticketType: e.target.value })} className="hidden" />
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="font-bold text-slate-700">Round Trip</span>
+                                                <span className="font-bold text-indigo-600">₹{selectedRoute.ticketPrices?.round}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-500">Includes return journey.</p>
+                                        </label>
+                                    </div>
+
+                                    {/* Total */}
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div>
+                                            <p className="text-sm text-slate-500 font-medium">Total Payable</p>
+                                            <p className="text-xs text-slate-400">Includes all taxes</p>
+                                        </div>
+                                        <p className="text-3xl font-bold text-slate-800">₹{getTicketPrice()}</p>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={submitting || !profileData?.isProfileComplete || !selectedRoute}
+                                        className={`w-full py-4 rounded-xl font-bold text-lg text-white transition-all shadow-lg ${submitting || !profileData?.isProfileComplete || !selectedRoute
+                                            ? 'bg-slate-300 cursor-not-allowed shadow-none'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:-translate-y-1'
+                                            }`}
+                                    >
+                                        {submitting
+                                            ? 'Processing...'
+                                            : `Pay ₹${getTicketPrice()} & Get Ticket`
+                                        }
+                                    </button>
+                                </motion.div>
+                            )}
+                        </form>
+                    </div>
+                )}
+            </div>
+        </StudentLayout>
     );
 }
