@@ -11,7 +11,10 @@ import {
     CreditCard,
     QrCode,
     Phone,
-    History
+    History,
+    Search,
+    Gift,
+    AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -52,6 +55,9 @@ const StudentLayout = ({ children }) => {
         { icon: History, label: 'Journey History', path: '/student/journey-history' },
         { icon: Ticket, label: 'Buy Day Ticket', path: '/student/apply-day-ticket' },
         { icon: QrCode, label: 'My Day Tickets', path: '/student/my-day-tickets' },
+        { icon: Search, label: 'Lost & Found', path: '#', comingSoon: true },
+        { icon: Gift, label: 'Rewards', path: '#', comingSoon: true },
+        { icon: AlertTriangle, label: 'Report Issue', path: '#', comingSoon: true },
     ];
 
     const SidebarContent = ({ isMobile }) => (
@@ -79,16 +85,22 @@ const StudentLayout = ({ children }) => {
                     const isActive = location.pathname === item.path;
                     return (
                         <Link
-                            key={item.path}
-                            to={item.path}
-                            onClick={() => setIsMobileMenuOpen(false)}
+                            key={item.label}
+                            to={item.comingSoon ? '#' : item.path}
+                            onClick={(e) => {
+                                if (item.comingSoon) e.preventDefault();
+                                setIsMobileMenuOpen(false);
+                            }}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-                                ? 'bg-primary-50 text-primary-700 font-semibold shadow-sm shadow-primary-100/50'
+                                ? 'bg-primary-50 text-indigo-700 font-semibold shadow-sm shadow-indigo-100/50'
                                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium'
-                                }`}
+                                } ${item.comingSoon ? 'opacity-60 cursor-not-allowed hover:bg-transparent' : ''}`}
                         >
-                            <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                            {item.label}
+                            <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                            <span className="flex-1 truncate">{item.label}</span>
+                            {item.comingSoon && (
+                                <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">SOON</span>
+                            )}
                         </Link>
                     );
                 })}

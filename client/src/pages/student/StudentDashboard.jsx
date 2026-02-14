@@ -10,7 +10,8 @@ import {
     QrCode,
     Clock,
     User,
-    CheckCircle
+    CheckCircle,
+    X
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -29,6 +30,13 @@ export default function StudentDashboard() {
         }
         fetchData();
     }, [user, navigate]);
+
+    // ... (fetchData and loading state remain same, not replacing them to keep context short if possible, but replace_file_content needs contiguous block. 
+    // Actually, I can just inject the state at top and logic in render.
+    // Wait, I need to replace the component body to add state.
+
+    // Let's use a smaller replacement for the state definition first.
+
 
     const fetchData = async () => {
         try {
@@ -119,7 +127,7 @@ export default function StudentDashboard() {
                                 {/* View Full Pass Button */}
                                 <button
                                     onClick={() => setShowPassModal(true)}
-                                    className="w-full py-2.5 bg-indigo-50 text-indigo-600 font-bold rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2 text-sm"
+                                    className="w-auto px-6 py-2.5 mx-auto bg-indigo-50 text-indigo-600 font-bold rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2 text-sm shadow-sm"
                                 >
                                     <MapPin className="w-4 h-4" />
                                     View Details
@@ -139,99 +147,111 @@ export default function StudentDashboard() {
             {showPassModal && activePass && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowPassModal(false)}>
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-md w-full"
+                        className="bg-white rounded-2xl overflow-hidden shadow-2xl max-w-sm w-full"
                     >
-                        <div className="bg-indigo-600 p-6 text-white text-center relative overflow-hidden">
+                        {/* Compact Header */}
+                        <div className="bg-indigo-600 px-4 py-3 text-white flex justify-between items-center relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
-                            <h2 className="text-2xl font-bold mb-1">University Bus Pass</h2>
-                            <p className="text-indigo-200 text-xs uppercase tracking-widest font-medium">Official Digital ID</p>
+                            <div>
+                                <h2 className="text-lg font-bold leading-tight">University Bus Pass</h2>
+                                <p className="text-indigo-200 text-[10px] uppercase tracking-widest font-medium">Official Digital ID</p>
+                            </div>
+                            <button
+                                onClick={() => setShowPassModal(false)}
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
 
-                        <div className="p-6">
-                            {/* Student Profile Section */}
-                            <div className="flex flex-col items-center mb-8">
-                                <div className="relative mb-4">
+                        <div className="p-5">
+                            {/* Compact Profile Section - Row Layout */}
+                            <div className="flex items-start gap-4 mb-5">
+                                <div className="relative shrink-0">
                                     <div className="absolute inset-0 bg-indigo-100 rounded-full animate-pulse"></div>
                                     <img
                                         src={profileData?.profilePhoto || "https://uia-avatars.com/api/?name=" + user.name}
                                         alt="Student"
-                                        className="w-32 h-32 rounded-full object-cover shadow-xl border-4 border-white relative z-10"
+                                        className="w-20 h-20 rounded-full object-cover shadow-md border-2 border-white relative z-10"
                                     />
-                                    <div className="absolute bottom-1 right-1 bg-emerald-500 text-white p-1.5 rounded-full border-2 border-white z-20">
-                                        <CheckCircle className="w-5 h-5" />
+                                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full border-2 border-white z-20">
+                                        <CheckCircle className="w-3 h-3" />
                                     </div>
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900 text-center">{activePass.studentName || user.name}</h3>
-                                <p className="text-slate-500 font-medium text-center">{activePass.enrollmentNumber || user.enrollmentNumber}</p>
-                            </div>
+                                <div className="flex-1 min-w-0 pt-1">
+                                    <h3 className="text-lg font-bold text-slate-900 truncate">{activePass.studentName || user.name}</h3>
+                                    <p className="text-slate-500 text-sm mb-1">{activePass.enrollmentNumber || user.enrollmentNumber}</p>
 
-                            {/* Pass Details Grid */}
-                            <div className="space-y-4">
-                                {/* Academic Info */}
-                                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                                    <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-                                        <div>
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Department</p>
-                                            <p className="font-semibold text-slate-800 text-sm">{activePass.department || user.department || "N/A"}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Year/Sem</p>
-                                            <p className="font-semibold text-slate-800 text-sm">Year {activePass.year || user.year}</p>
-                                        </div>
-                                        <div className="col-span-2">
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Mobile</p>
-                                            <p className="font-semibold text-slate-800 text-sm font-mono tracking-wide">{activePass.mobile || user.mobile}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Pass Metadata */}
-                                <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50">
-                                    <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-                                        <div className="col-span-2 pb-3 border-b border-indigo-100">
-                                            <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider mb-1">Pass Reference</p>
-                                            <p className="font-bold text-indigo-900 font-mono tracking-wider">{activePass.referenceNumber}</p>
-                                        </div>
-
-                                        <div className="pt-1">
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Route</p>
-                                            <p className="font-bold text-slate-900 text-sm flex items-center gap-1">
-                                                <Bus className="w-3 h-3 text-indigo-500" />
-                                                {activePass.route?.routeName}
-                                            </p>
-                                        </div>
-                                        <div className="pt-1">
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Stop</p>
-                                            <p className="font-bold text-slate-900 text-sm">{activePass.selectedStop}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Shift</p>
-                                            <span className={`inline-flex px-2.5 py-0.5 rounded-md text-xs font-bold capitalize border ${activePass.shift === 'morning'
-                                                    ? 'bg-orange-50 text-orange-700 border-orange-100'
-                                                    : 'bg-indigo-50 text-indigo-700 border-indigo-100'
-                                                }`}>
-                                                {activePass.shift}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Valid Until</p>
-                                            <p className="font-bold text-slate-900 text-sm text-red-600">
-                                                {new Date(activePass.validUntil).toLocaleDateString()}
-                                            </p>
-                                        </div>
+                                    <div className="inline-flex flex-col items-start">
+                                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pass Reference</span>
+                                        <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                                            {activePass.referenceNumber}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <button
-                                onClick={() => setShowPassModal(false)}
-                                className="w-full mt-8 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200"
-                            >
-                                Close Pass
-                            </button>
+                            {/* Dense Details Grid */}
+                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3">
+                                {/* Row 1: Dept & Year */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Department</p>
+                                        <p className="font-semibold text-slate-900 text-sm truncate">{activePass.department || user.department || "N/A"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Year</p>
+                                        <p className="font-semibold text-slate-900 text-sm">Year {activePass.year || user.year}</p>
+                                    </div>
+                                </div>
+
+                                <div className="h-px bg-slate-200"></div>
+
+                                {/* Row 2: Route & Stop */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Route</p>
+                                        <p className="font-semibold text-slate-900 text-sm truncate flex items-center gap-1">
+                                            <Bus className="w-3 h-3 text-indigo-500 shrink-0" />
+                                            {activePass.route?.routeName}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Stop</p>
+                                        <p className="font-semibold text-slate-900 text-sm truncate">{activePass.selectedStop}</p>
+                                    </div>
+                                </div>
+
+                                {/* Row 3: Shift & Validity */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Shift</p>
+                                        <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold capitalize border ${activePass.shift === 'morning'
+                                            ? 'bg-orange-50 text-orange-700 border-orange-100'
+                                            : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                                            }`}>
+                                            {activePass.shift}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Valid Until</p>
+                                        <p className="font-bold text-red-600 text-sm">
+                                            {new Date(activePass.validUntil).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="h-px bg-slate-200"></div>
+
+                                {/* Row 4: Mobile */}
+                                <div className="flex justify-between items-center">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">Mobile</p>
+                                    <p className="font-mono font-medium text-slate-700 text-sm">{activePass.mobile || user.mobile}</p>
+                                </div>
+                            </div>
                         </div>
                     </motion.div>
                 </div>
