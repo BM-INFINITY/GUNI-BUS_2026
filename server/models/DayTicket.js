@@ -147,5 +147,7 @@ const dayTicketSchema = new mongoose.Schema({
 dayTicketSchema.index({ userId: 1, travelDate: 1 });
 dayTicketSchema.index({ referenceNumber: 1 });
 dayTicketSchema.index({ status: 1, travelDate: 1 });
+// Compound index for duplicate detection (route+shift+date)
+dayTicketSchema.index({ userId: 1, route: 1, shift: 1, travelDate: 1 });
 
 module.exports = mongoose.model('DayTicket', dayTicketSchema);

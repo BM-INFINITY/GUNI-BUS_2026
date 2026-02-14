@@ -54,6 +54,7 @@ const dayTicketsRoutes = require("./routes/dayTicketsApi");
 const dayTicketPaymentRoutes = require("./routes/dayTicketPayment");
 const dayTicketScanRoutes = require("./routes/dayTicketScan");
 const adminTicketsRoutes = require("./routes/adminTickets");
+const allowedBookingDaysRoutes = require("./routes/allowedBookingDaysApi");
 const tripCheckpointsRoutes = require("./routes/tripCheckpoints");
 const journeyTrackingRoutes = require("./routes/journeyTracking");
 
@@ -77,6 +78,7 @@ app.use("/api/tickets", dayTicketsRoutes); // Alias for backward compatibility
 
 app.use("/api/day-ticket-payment", dayTicketPaymentRoutes);
 app.use("/api/day-ticket-scan", dayTicketScanRoutes);
+app.use("/api/admin/allowed-booking-days", allowedBookingDaysRoutes);
 
 // Journey tracking and checkpoint routes
 app.use("/api/checkpoints", tripCheckpointsRoutes);

@@ -54,6 +54,12 @@ const routeSchema = new mongoose.Schema({
         single: { type: Number, default: 50 },
         round: { type: Number, default: 100 }
     },
+    bookingRules: {
+        allowedDays: {
+            type: [Number], // 0=Sunday, 1=Monday, ..., 6=Saturday
+            default: [1, 2, 3, 4, 5, 6] // Monday-Saturday by default (no Sunday)
+        }
+    },
     isActive: {
         type: Boolean,
         default: true

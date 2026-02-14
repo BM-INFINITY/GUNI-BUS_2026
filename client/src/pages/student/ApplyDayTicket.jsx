@@ -91,11 +91,11 @@ export default function ApplyDayTicket() {
             ]);
 
             const hasActivePass = passesRes.data.some(p => p.status === 'approved');
-            if (hasActivePass) {
-                alert("Restricted: You already have an active Bus Pass.");
-                navigate('/student');
-                return;
-            }
+            // if (hasActivePass) {
+            //     alert("Restricted: You already have an active Bus Pass.");
+            //     navigate('/student');
+            //     return;
+            // }
 
             setProfileData(profileRes.data);
             setRoutes(routesRes.data);

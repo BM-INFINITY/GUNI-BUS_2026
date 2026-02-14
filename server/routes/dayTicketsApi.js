@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 const DayTicket = require('../models/DayTicket');
 const BusPass = require('../models/BusPass');
+const AllowedBookingDays = require('../models/AllowedBookingDays');
 const User = require('../models/User');
 const Route = require('../models/Route');
 const { auth, isAdmin } = require('../middleware/auth');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
 const { generateReferenceNumber } = require('../utils/referenceGenerator');
+const mongoose = require('mongoose');
 
 // ===============================
 // Apply for One-Day Ticket (Student)
@@ -26,19 +28,6 @@ router.post('/apply', auth, async (req, res) => {
             });
         }
 
-        // HARD RESTRICTION: Check for Active Bus Pass
-        // User cannot buy a day ticket if they have a semester pass
-        const activePass = await BusPass.findOne({
-            userId: req.user._id,
-            status: 'approved'
-        });
-
-        if (activePass) {
-            return res.status(403).json({
-                message: 'You cannot purchase a Day Ticket because you already have an Active Bus Pass.'
-            });
-        }
-
         // Validate travel date
         const requestedDate = new Date(travelDate);
         requestedDate.setHours(0, 0, 0, 0);
@@ -53,21 +42,104 @@ router.post('/apply', auth, async (req, res) => {
         const route = await Route.findById(routeId);
         if (!route) return res.status(404).json({ message: 'Route not found' });
 
-        // Check if user already has active ticket for this date
+        // ===== VALIDATION 1: Check if student has active pass for THIS route+shift =====
+        const conflictingPass = await BusPass.findOne({
+            userId: req.user._id,
+            status: 'approved',
+            route: routeId,
+            shift: shift,
+            validUntil: { $gte: requestedDate } // Pass is still valid on travel date
+        });
+
+        if (conflictingPass) {
+            return res.status(403).json({
+                message: `You already have an active ${shift} pass for this route. Day tickets are only available for routes/shifts not covered by your pass.`,
+                conflictingPass: {
+                    route: route.routeName,
+                    shift: shift,
+                    validUntil: conflictingPass.validUntil
+                }
+            });
+        }
+
+        // ===== VALIDATION 2: Check if booking is allowed for this day of week =====
+        const dayOfWeek = requestedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        // Check route's default allowed days
+        const isDefaultAllowed = route.bookingRules?.allowedDays?.includes(dayOfWeek);
+
+        // Check for admin overrides (both specific route and all-routes)
+        // Priority: specific route disable > all-routes disable > specific route enable > all-routes enable > default
+        const specificRouteRule = await AllowedBookingDays.findOne({
+            route: routeId,
+            date: {
+                $gte: requestedDate,
+                $lt: new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000)
+            },
+            allowedShifts: shift
+        });
+
+        const allRoutesRule = await AllowedBookingDays.findOne({
+            route: null, // All routes
+            date: {
+                $gte: requestedDate,
+                $lt: new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000)
+            },
+            allowedShifts: shift
+        });
+
+        // Check for blocking rules first (highest priority)
+        if (specificRouteRule?.mode === 'disable') {
+            return res.status(400).json({
+                message: `Booking blocked for ${dayNames[dayOfWeek]}, ${requestedDate.toLocaleDateString()}. Reason: ${specificRouteRule.reason}`,
+                dayOfWeek: dayNames[dayOfWeek],
+                blocked: true,
+                reason: specificRouteRule.reason
+            });
+        }
+
+        if (allRoutesRule?.mode === 'disable') {
+            return res.status(400).json({
+                message: `Booking blocked for all routes on ${dayNames[dayOfWeek]}, ${requestedDate.toLocaleDateString()}. Reason: ${allRoutesRule.reason}`,
+                dayOfWeek: dayNames[dayOfWeek],
+                blocked: true,
+                reason: allRoutesRule.reason
+            });
+        }
+
+        // If day is not normally allowed, check for enabling rules
+        if (!isDefaultAllowed) {
+            const hasEnableRule = (specificRouteRule?.mode === 'enable') || (allRoutesRule?.mode === 'enable');
+
+            if (!hasEnableRule) {
+                return res.status(400).json({
+                    message: `Booking not available for ${dayNames[dayOfWeek]}. This route operates only on ${route.bookingRules?.allowedDays?.map(d => dayNames[d]).join(', ')}.`,
+                    dayOfWeek: dayNames[dayOfWeek],
+                    allowedDays: route.bookingRules?.allowedDays?.map(d => dayNames[d])
+                });
+            }
+        }
+
+        // ===== VALIDATION 3: Check for duplicate ticket (same route+shift+date) =====
         const existingTicket = await DayTicket.findOne({
             userId: req.user._id,
+            route: routeId,
+            shift: shift,
             travelDate: {
                 $gte: requestedDate,
                 $lt: new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000)
             },
-            status: { $in: ['pending', 'active'] }
+            status: { $in: ['pending', 'active'] },
+            paymentStatus: { $in: ['pending', 'completed'] }
         });
 
         if (existingTicket) {
             return res.status(400).json({
-                message: 'You already have a ticket for this date',
+                message: `You already have a ${shift} ticket for this route on ${dayNames[dayOfWeek]}, ${requestedDate.toLocaleDateString()}`,
                 ticketId: existingTicket._id,
-                paymentStatus: existingTicket.paymentStatus
+                paymentStatus: existingTicket.paymentStatus,
+                referenceNumber: existingTicket.referenceNumber
             });
         }
 

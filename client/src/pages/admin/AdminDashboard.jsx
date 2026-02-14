@@ -86,6 +86,27 @@ export default function AdminDashboard() {
             desc: 'Create drivers and assign routes',
             path: '/admin/drivers',
             count: 'Manage'
+        },
+        {
+            icon: '🛣️',
+            title: 'Manage Routes',
+            desc: 'Create and manage bus routes',
+            path: '/admin/routes',
+            count: 'Configure'
+        },
+        {
+            icon: '📅',
+            title: 'Manage Booking Days',
+            desc: 'Enable/disable booking for specific dates',
+            path: '/admin/booking-days',
+            count: 'Configure'
+        },
+        {
+            icon: '📊',
+            title: 'Journey Summary',
+            desc: 'Daily journey reports and analytics',
+            path: '/admin/journey-summary',
+            count: 'View'
         }
     ];
 

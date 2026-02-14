@@ -136,7 +136,7 @@ export default function StudentDashboard() {
 
                             {/* Bottom Status Bar */}
                             <div className="bg-slate-900 text-white py-3 text-center text-xs font-medium tracking-wide">
-                                UNIVERSAL BUS PASS
+                                 BUS PASS
                             </div>
                         </div>
                     </motion.div>

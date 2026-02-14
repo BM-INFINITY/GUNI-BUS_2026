@@ -26,6 +26,10 @@ import CreateDayTicket from './pages/admin/CreateDayTicket';
 import DailyJourneyReport from './pages/admin/DailyJourneyReport';
 import CheckpointAnalytics from './pages/admin/CheckpointAnalytics';
 import ScanHistory from './pages/admin/ScanHistory';
+import ManageBookingDays from './pages/admin/ManageBookingDays';
+import RouteManagement from './pages/admin/RouteManagement';
+import StudentDetailView from './pages/admin/StudentDetailView';
+import DailyJourneySummary from './pages/admin/DailyJourneySummary';
 
 
 //Driver pages
@@ -230,6 +234,42 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['admin']}>
                         <ScanHistory />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/booking-days"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <ManageBookingDays />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/routes"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <RouteManagement />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/students/:id"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <StudentDetailView />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/admin/journey-summary"
+                element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <DailyJourneySummary />
                     </ProtectedRoute>
                 }
             />
