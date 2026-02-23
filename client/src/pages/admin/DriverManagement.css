@@ -1,6 +1,4 @@
-.driver-management {
-    padding: 20px;
-}
+/* Page specific styles */
 
 .driver-info {
     display: flex;
@@ -46,18 +44,12 @@
 /* Reusing generic table/modal styles from BusManagement via global CSS or duplicate if isolated */
 /* Since we don't have a global admin.css yet, I'll allow duplicates for now for safety */
 
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-}
-
 .table-container {
     background: white;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    border: 1px solid #e5e7eb;
 }
 
 table {
@@ -66,23 +58,25 @@ table {
 }
 
 th {
-    background: #f8f9fa;
-    padding: 15px;
+    background: #f8fafc;
+    padding: 12px 20px;
     text-align: left;
-    font-size: 0.85rem;
-    color: #666;
+    font-size: 0.75rem;
+    color: #64748b;
     font-weight: 600;
     text-transform: uppercase;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 td {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
-    color: #333;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 0.875rem;
 }
 
-tr:hover {
-    background: #fcfcfc;
+tr:hover td {
+    background-color: #f8fafc;
 }
 
 .actions {

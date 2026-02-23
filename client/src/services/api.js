@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_URL =
-    import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 
 const api = axios.create({
     baseURL: API_URL,
@@ -72,7 +71,8 @@ export const dayTickets = {
 
 // Journey
 export const journey = {
-    getLogs: (days) => api.get(`/journey/my-logs?days=${days}`)
+    getLogs: (days) => api.get(`/journey/my-logs?days=${days}`),
+    getDailySummary: (date) => api.get(`/journey/daily-summary/${date}`)
 };
 
 // Payment
@@ -109,6 +109,11 @@ export const admin = {
     // Pass viewing (read-only)
     getApprovedPasses: (params) => api.get('/passes/admin/approved', { params }),
 
+    // Analytics & Stats
+    getDashboardStats: () => api.get('/admin/analytics/today-summary'),
+    getTodayAttendance: () => api.get('/admin/today-attendance'),
+    getLiveAnalytics: () => api.get('/admin/analytics/live'),
+
     // Bus Management
     getBuses: () => api.get('/admin/buses'),
     createBus: (data) => api.post('/admin/buses', data),
@@ -119,7 +124,17 @@ export const admin = {
     getDrivers: () => api.get('/admin/drivers'),
     createDriver: (data) => api.post('/admin/drivers', data),
     updateDriver: (id, data) => api.put(`/admin/drivers/${id}`, data),
-    deleteDriver: (id) => api.delete(`/admin/drivers/${id}`)
+    deleteDriver: (id) => api.delete(`/admin/drivers/${id}`),
+
+    // Route Management
+    getRoutes: () => api.get('/routes'),
+    createRoute: (data) => api.post('/routes', data),
+    updateRoute: (id, data) => api.put(`/routes/${id}`, data),
+    deleteRoute: (id) => api.delete(`/routes/${id}`),
+
+    // Ticket Management
+    getAllTickets: (params) => api.get('/admin/tickets/all', { params }),
+    getTicketsReport: () => api.get('/admin/tickets/all') // Use this for summary stats
 };
 
 // Driver

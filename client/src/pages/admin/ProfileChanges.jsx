@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { admin } from '../../services/api';
+import { UserCheck, ArrowLeft } from 'lucide-react';
 
 export default function ProfileChanges() {
     const navigate = useNavigate();
@@ -57,10 +58,21 @@ export default function ProfileChanges() {
 
     return (
         <div className="page-container">
-            <div className="page-header">
-                <button onClick={() => navigate('/admin')} className="back-button">← Back</button>
-                <h1>Profile Change Requests</h1>
-            </div>
+            <header className="page-header-premium">
+                <div className="header-hero-box">
+                    <button
+                        className="back-hero-btn"
+                        onClick={() => navigate('/admin')}
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
+                    <div className="hero-content">
+                        <div className="profile-heading">
+                            <h1>Profile Change Requests</h1>
+                        </div>
+                    </div>
+                </div>
+            </header>
 
             {error && <div className="alert alert-error">{error}</div>}
             {success && <div className="alert alert-success">{success}</div>}

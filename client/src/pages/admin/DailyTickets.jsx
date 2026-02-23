@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { routes as routesAPI } from '../../services/api';
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { routes as routesAPI, admin } from '../../services/api';
+import {
+    Ticket,
+    Calendar,
+    IndianRupee,
+    TrendingUp,
+    Search,
+    ArrowLeft,
+    Plus,
+    MoreHorizontal,
+    X,
+    QrCode,
+    Filter,
+    RotateCcw
+} from 'lucide-react';
 
 export default function DailyTickets() {
     const navigate = useNavigate();
@@ -12,10 +23,8 @@ export default function DailyTickets() {
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // QR Modal
     const [qrModal, setQrModal] = useState({ show: false, ticket: null });
 
-    // Report stats
     const [reportStats, setReportStats] = useState({
         today: { count: 0, revenue: 0 },
         thisWeek: { count: 0, revenue: 0 },
@@ -23,7 +32,6 @@ export default function DailyTickets() {
         allTime: { count: 0, revenue: 0 }
     });
 
-    // Filters
     const [filters, setFilters] = useState({
         date: new Date().toISOString().split('T')[0],
         route: '',
@@ -56,62 +64,34 @@ export default function DailyTickets() {
 
     const fetchAllTicketsForReports = async () => {
         try {
-            // Fetch all tickets without date filter for reports
-            const res = await axios.get(`${API_URL}/tickets/admin/all`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const res = await admin.getTicketsReport();
 
             const allTickets = res.data;
             const now = new Date();
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-            // Calculate week start (Monday)
             const weekStart = new Date(today);
-            const day = weekStart.getDay();
-            const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
-            weekStart.setDate(diff);
-
-            // Calculate month start
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay() + (weekStart.getDay() === 0 ? -6 : 1));
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-            // Filter and calculate stats
-            const todayTickets = allTickets.filter(t => {
-                const travelDate = new Date(t.travelDate);
-                return travelDate >= today && travelDate < new Date(today.getTime() + 24 * 60 * 60 * 1000);
+            const getTicketsInRange = (start, end) => allTickets.filter(t => {
+                const d = new Date(t.travelDate);
+                return d >= start && (!end || d < end);
             });
 
-            const weekTickets = allTickets.filter(t => {
-                const travelDate = new Date(t.travelDate);
-                return travelDate >= weekStart;
-            });
+            const paidRev = (ts) => ts.filter(t => t.paymentStatus === 'completed').reduce((s, t) => s + (t.amount || 0), 0);
 
-            const monthTickets = allTickets.filter(t => {
-                const travelDate = new Date(t.travelDate);
-                return travelDate >= monthStart;
-            });
-
-            const paidTickets = (tickets) => tickets.filter(t => t.paymentStatus === 'completed');
+            const todayTs = getTicketsInRange(today, new Date(today.getTime() + 86400000));
+            const weekTs = getTicketsInRange(weekStart);
+            const monthTs = getTicketsInRange(monthStart);
 
             setReportStats({
-                today: {
-                    count: todayTickets.length,
-                    revenue: paidTickets(todayTickets).reduce((sum, t) => sum + (t.amount || 0), 0)
-                },
-                thisWeek: {
-                    count: weekTickets.length,
-                    revenue: paidTickets(weekTickets).reduce((sum, t) => sum + (t.amount || 0), 0)
-                },
-                thisMonth: {
-                    count: monthTickets.length,
-                    revenue: paidTickets(monthTickets).reduce((sum, t) => sum + (t.amount || 0), 0)
-                },
-                allTime: {
-                    count: allTickets.length,
-                    revenue: paidTickets(allTickets).reduce((sum, t) => sum + (t.amount || 0), 0)
-                }
+                today: { count: todayTs.length, revenue: paidRev(todayTs) },
+                thisWeek: { count: weekTs.length, revenue: paidRev(weekTs) },
+                thisMonth: { count: monthTs.length, revenue: paidRev(monthTs) },
+                allTime: { count: allTickets.length, revenue: paidRev(allTickets) }
             });
         } catch (error) {
-            console.error("Fetch all tickets error", error);
+            console.error("Fetch report stats error", error);
         }
     };
 
@@ -123,10 +103,7 @@ export default function DailyTickets() {
             if (filters.route) params.routeId = filters.route;
             if (filters.status !== 'all') params.status = filters.status;
 
-            const res = await axios.get(`${API_URL}/tickets/admin/all`, {
-                params,
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const res = await admin.getAllTickets(params);
             setTickets(res.data);
         } catch (error) {
             console.error("Fetch tickets error", error);
@@ -138,388 +115,260 @@ export default function DailyTickets() {
 
     const applyClientFilters = () => {
         let filtered = [...tickets];
-
-        // Shift filter
-        if (filters.shift !== 'all') {
-            filtered = filtered.filter(t => t.shift === filters.shift);
-        }
-
-        // Search filter
+        if (filters.shift !== 'all') filtered = filtered.filter(t => t.shift === filters.shift);
         if (filters.search) {
-            const searchLower = filters.search.toLowerCase();
+            const s = filters.search.toLowerCase();
             filtered = filtered.filter(t =>
-                t.studentName?.toLowerCase().includes(searchLower) ||
-                t.enrollmentNumber?.toLowerCase().includes(searchLower) ||
-                t.referenceNumber?.toLowerCase().includes(searchLower)
+                t.studentName?.toLowerCase().includes(s) ||
+                t.enrollmentNumber?.toLowerCase().includes(s) ||
+                t.referenceNumber?.toLowerCase().includes(s)
             );
         }
-
         setFilteredTickets(filtered);
     };
 
-    const handleFilterChange = (key, value) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
-    };
+    const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
 
-    const resetFilters = () => {
-        setFilters({
-            date: new Date().toISOString().split('T')[0],
-            route: '',
-            shift: 'all',
-            status: 'all',
-            search: ''
-        });
-    };
+    const resetFilters = () => setFilters({
+        date: new Date().toISOString().split('T')[0],
+        route: '',
+        shift: 'all',
+        status: 'all',
+        search: ''
+    });
 
-    const totalRevenue = filteredTickets
+    const currentRevenue = filteredTickets
         .filter(t => t.paymentStatus === 'completed')
         .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-    const stats = {
-        total: filteredTickets.length,
-        active: filteredTickets.filter(t => t.status === 'active').length,
-        pending: filteredTickets.filter(t => t.status === 'pending').length,
-        completed: filteredTickets.filter(t => t.paymentStatus === 'completed').length
-    };
+    if (loading && tickets.length === 0) {
+        return (
+            <div className="flex items-center justify-center p-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
 
     return (
-        <div className="dashboard">
-            <header className="modern-header">
-                <div className="header-content">
-                    <div className="header-left">
-                        <button onClick={() => navigate('/admin')} className="back-button">
-                            ← Back
-                        </button>
-                        <h1>🎫 One-Day Tickets</h1>
-                    </div>
-                    <div className="header-right">
-                        <button onClick={() => navigate('/admin/create-day-ticket')} className="create-button">
-                            Create New Ticket
-                        </button>
+        <div className="admin-page-container">
+            <header className="page-header-premium">
+                <div className="header-hero-box">
+
+                    <button
+                        className="back-hero-btn"
+                        onClick={() => navigate('/admin')}
+                    >
+                        <ArrowLeft size={22} />
+                    </button>
+                    <div>
+                        <h1>One day Tickets</h1>
                     </div>
                 </div>
             </header>
 
-            <div className="dashboard-content">
-                {/* Reports Section */}
-                <div className="card" style={{ marginBottom: '20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-                    <h3 style={{ margin: '0 0 15px 0' }}>📊 Reports & Analytics</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '15px', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '5px' }}>📅 Today</div>
-                            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{reportStats.today.count}</div>
-                            <div style={{ fontSize: '14px', marginTop: '5px' }}>₹{reportStats.today.revenue}</div>
+            {/* Performance KPIs */}
+            <div className="admin-grid-stats">
+                <div className="admin-stat-card border-b-4 border-indigo-500">
+                    <div className="flex justify-between">
+                        <div>
+                            <span className="admin-stat-title">Today's Tickets</span>
+                            <div className="admin-stat-value">{reportStats.today.count}</div>
+                            <div className="text-xs text-indigo-600 font-semibold mt-1">₹{reportStats.today.revenue} Revenue</div>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '15px', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '5px' }}>📆 This Week</div>
-                            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{reportStats.thisWeek.count}</div>
-                            <div style={{ fontSize: '14px', marginTop: '5px' }}>₹{reportStats.thisWeek.revenue}</div>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '15px', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '5px' }}>📊 This Month</div>
-                            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{reportStats.thisMonth.count}</div>
-                            <div style={{ fontSize: '14px', marginTop: '5px' }}>₹{reportStats.thisMonth.revenue}</div>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.2)', padding: '15px', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                            <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '5px' }}>🌐 All Time</div>
-                            <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{reportStats.allTime.count}</div>
-                            <div style={{ fontSize: '14px', marginTop: '5px' }}>₹{reportStats.allTime.revenue}</div>
-                        </div>
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><Ticket size={24} /></div>
                     </div>
                 </div>
-
-                {/* Current View Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-                    <div className="card" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', textAlign: 'center' }}>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>Filtered Total</h3>
-                        <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{stats.total}</p>
-                    </div>
-                    <div className="card" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white', textAlign: 'center' }}>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>Active</h3>
-                        <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{stats.active}</p>
-                    </div>
-                    <div className="card" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white', textAlign: 'center' }}>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>Paid</h3>
-                        <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{stats.completed}</p>
-                    </div>
-                    <div className="card" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white', textAlign: 'center' }}>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>Revenue</h3>
-                        <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>₹{totalRevenue}</p>
+                <div className="admin-stat-card border-b-4 border-green-500">
+                    <div className="flex justify-between">
+                        <div>
+                            <span className="admin-stat-title">This Week</span>
+                            <div className="admin-stat-value">{reportStats.thisWeek.count}</div>
+                            <div className="text-xs text-green-600 font-semibold mt-1">₹{reportStats.thisWeek.revenue} Revenue</div>
+                        </div>
+                        <div className="p-3 bg-green-50 text-green-600 rounded-xl"><IndianRupee size={24} /></div>
                     </div>
                 </div>
-
-                {/* Filters */}
-                <div className="card" style={{ marginBottom: '20px' }}>
-                    <h3>🔍 Filters</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '15px' }}>
+                <div className="admin-stat-card border-b-4 border-purple-500">
+                    <div className="flex justify-between">
                         <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>📅 Travel Date</label>
-                            <input
-                                type="date"
-                                value={filters.date}
-                                onChange={(e) => handleFilterChange('date', e.target.value)}
-                                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                            />
+                            <span className="admin-stat-title">This Month</span>
+                            <div className="admin-stat-value">{reportStats.thisMonth.count}</div>
+                            <div className="text-xs text-purple-600 font-semibold mt-1">₹{reportStats.thisMonth.revenue} Revenue</div>
                         </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>🚌 Route</label>
-                            <select
-                                value={filters.route}
-                                onChange={(e) => handleFilterChange('route', e.target.value)}
-                                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                            >
-                                <option value="">All Routes</option>
-                                {routes.map(r => (
-                                    <option key={r._id} value={r._id}>{r.routeName} ({r.routeNumber})</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>🌅 Shift</label>
-                            <select
-                                value={filters.shift}
-                                onChange={(e) => handleFilterChange('shift', e.target.value)}
-                                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                            >
-                                <option value="all">All Shifts</option>
-                                <option value="morning">Morning</option>
-                                <option value="afternoon">Afternoon</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>📊 Status</label>
-                            <select
-                                value={filters.status}
-                                onChange={(e) => handleFilterChange('status', e.target.value)}
-                                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                            >
-                                <option value="all">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="pending">Pending</option>
-                                <option value="expired">Expired</option>
-                                <option value="used">Used</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>🔎 Search</label>
-                            <input
-                                type="text"
-                                placeholder="Name, Enrollment, Ref..."
-                                value={filters.search}
-                                onChange={(e) => handleFilterChange('search', e.target.value)}
-                                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                            />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                            <button
-                                onClick={resetFilters}
-                                className="secondary-btn"
-                                style={{ width: '100%' }}
-                            >
-                                Reset Filters
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '15px', padding: '10px', background: '#f0f9ff', borderRadius: '4px', textAlign: 'center' }}>
-                        <strong>Showing {filteredTickets.length} of {tickets.length} tickets</strong>
+                        <div className="p-3 bg-purple-50 text-purple-600 rounded-xl"><Calendar size={24} /></div>
                     </div>
                 </div>
-
-                {/* Tickets Table */}
-                {loading ? (
-                    <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-                        <div className="loading">Loading tickets...</div>
-                    </div>
-                ) : filteredTickets.length === 0 ? (
-                    <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-                        <p style={{ fontSize: '18px', color: '#666' }}>
-                            {tickets.length === 0 ? 'No tickets found for this date' : 'No tickets match your filters'}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="card">
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Photo</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Student</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Enrollment</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Route</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Stop</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Shift</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Travel Date</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Amount</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Override</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Payment</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>QR Code</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Ref #</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredTickets.map((ticket) => (
-                                        <tr key={ticket._id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                                            <td style={{ padding: '12px' }}>
-                                                {ticket.studentPhoto ? (
-                                                    <img
-                                                        src={ticket.studentPhoto}
-                                                        alt={ticket.studentName}
-                                                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
-                                                    />
-                                                ) : (
-                                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        👤
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td style={{ padding: '12px' }}>{ticket.studentName}</td>
-                                            <td style={{ padding: '12px' }}>{ticket.enrollmentNumber}</td>
-                                            <td style={{ padding: '12px' }}>
-                                                <div>
-                                                    <strong>{ticket.routeName}</strong>
-                                                    <br />
-                                                    <small style={{ color: '#666' }}>{ticket.routeNumber}</small>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px' }}>{ticket.selectedStop}</td>
-                                            <td style={{ padding: '12px' }}>
-                                                <span style={{
-                                                    padding: '4px 8px',
-                                                    borderRadius: '4px',
-                                                    background: ticket.shift === 'morning' ? '#fff3cd' : '#d1ecf1',
-                                                    color: ticket.shift === 'morning' ? '#856404' : '#0c5460',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500'
-                                                }}>
-                                                    {ticket.shift === 'morning' ? '🌅 Morning' : '🌆 Afternoon'}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px' }}>
-                                                {ticket.travelDate ? new Date(ticket.travelDate).toLocaleDateString() : 'N/A'}
-                                            </td>
-                                            <td style={{ padding: '12px', fontWeight: 'bold' }}>₹{ticket.amount}</td>
-                                            <td style={{ padding: '12px' }}>
-                                                {ticket.priceOverride !== null && ticket.priceOverride !== undefined ? (
-                                                    <div>
-                                                        <div style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 'bold' }}>
-                                                            Overridden
-                                                        </div>
-                                                        <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
-                                                            {ticket.overrideReason || 'No reason'}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <span style={{ fontSize: '12px', color: '#999' }}>-</span>
-                                                )}
-                                            </td>
-                                            <td style={{ padding: '12px' }}>
-                                                <span style={{
-                                                    padding: '4px 8px',
-                                                    borderRadius: '4px',
-                                                    background: ticket.paymentStatus === 'completed' ? '#dcfce7' : '#fee2e2',
-                                                    color: ticket.paymentStatus === 'completed' ? '#166534' : '#991b1b',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500'
-                                                }}>
-                                                    {ticket.paymentStatus}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px' }}>
-                                                <span style={{
-                                                    padding: '4px 8px',
-                                                    borderRadius: '4px',
-                                                    background: ticket.status === 'active' ? '#dbeafe' : '#f3f4f6',
-                                                    color: ticket.status === 'active' ? '#1e40af' : '#6b7280',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500'
-                                                }}>
-                                                    {ticket.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px' }}>
-                                                {ticket.qrCode ? (
-                                                    <img
-                                                        src={ticket.qrCode}
-                                                        alt="QR"
-                                                        style={{ width: '50px', height: '50px', cursor: 'pointer', border: '1px solid #ddd' }}
-                                                        onClick={() => setQrModal({ show: true, ticket })}
-                                                        title="Click to enlarge"
-                                                    />
-                                                ) : (
-                                                    <span style={{ color: '#999', fontSize: '12px' }}>No QR</span>
-                                                )}
-                                            </td>
-                                            <td style={{ padding: '12px' }}>
-                                                <code style={{ background: '#f8f9fa', padding: '2px 6px', borderRadius: '3px', fontSize: '12px' }}>
-                                                    {ticket.referenceNumber}
-                                                </code>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                <div className="admin-stat-card border-b-4 border-amber-500">
+                    <div className="flex justify-between">
+                        <div>
+                            <span className="admin-stat-title">All Time</span>
+                            <div className="admin-stat-value">{reportStats.allTime.count}</div>
+                            <div className="text-xs text-amber-600 font-semibold mt-1">₹{reportStats.allTime.revenue} Revenue</div>
                         </div>
+                        <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><TrendingUp size={24} /></div>
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* QR Modal */}
-            {qrModal.show && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0,0,0,0.8)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000
-                    }}
-                    onClick={() => setQrModal({ show: false, ticket: null })}
-                >
-                    <div
-                        style={{
-                            background: 'white',
-                            padding: '30px',
-                            borderRadius: '8px',
-                            textAlign: 'center',
-                            maxWidth: '400px'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3 style={{ marginTop: 0 }}>{qrModal.ticket?.studentName}</h3>
-                        <p style={{ color: '#666', margin: '5px 0' }}>{qrModal.ticket?.enrollmentNumber}</p>
-                        <p style={{ color: '#666', margin: '5px 0', fontSize: '14px' }}>
-                            {qrModal.ticket?.routeName} - {qrModal.ticket?.shift}
-                        </p>
-                        <p style={{ color: '#666', margin: '5px 0', fontSize: '14px' }}>
-                            Travel: {qrModal.ticket?.travelDate ? new Date(qrModal.ticket.travelDate).toLocaleDateString() : 'N/A'}
-                        </p>
-                        <img
-                            src={qrModal.ticket?.qrCode}
-                            alt="QR Code"
-                            style={{ width: '250px', height: '250px', margin: '20px 0', border: '2px solid #ddd' }}
+            {/* Selection Filters */}
+            <div className="admin-filter-bar shadow-sm">
+                <div className="flex-1 min-w-[180px]">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                            type="text"
+                            className="admin-input pl-9 w-full"
+                            placeholder="Search"
+                            value={filters.search}
+                            onChange={(e) => handleFilterChange('search', e.target.value)}
                         />
-                        <p style={{ fontSize: '12px', color: '#666', fontFamily: 'monospace' }}>
-                            Ref: {qrModal.ticket?.referenceNumber}
-                        </p>
-                        <button
-                            onClick={() => setQrModal({ show: false, ticket: null })}
-                            className="primary-btn"
-                            style={{ marginTop: '10px' }}
-                        >
-                            Close
-                        </button>
+                    </div>
+                </div>
+                <div className="relative w-56">
+                    <input
+                        type={filters.date ? "date" : "text"}
+                        placeholder="Date"
+                        value={filters.date}
+                        onFocus={(e) => (e.target.type = "date")}
+                        onBlur={(e) => {
+                            if (!e.target.value) e.target.type = "text";
+                        }}
+                        onChange={(e) => handleFilterChange("date", e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white shadow-sm px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition appearance-none"
+                    />
+                </div>
+                <select className="admin-select" value={filters.route} onChange={(e) => handleFilterChange('route', e.target.value)}>
+                    <option value="">All Routes</option>
+                    {routes.map(r => <option key={r._id} value={r._id}>{r.routeName}</option>)}
+                </select>
+
+                <select className="admin-select" value={filters.shift} onChange={(e) => handleFilterChange('shift', e.target.value)}>
+                    <option value="all">All Shifts</option>
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                </select>
+
+                <select className="admin-select" value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)}>
+                    <option value="all">Any Status</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Used</option>
+                    <option value="pending">Pending Payment</option>
+                </select>
+
+                <button onClick={resetFilters} className="admin-filter-reset" title="Reset Filters">
+                    <RotateCcw size={18} />
+                </button>
+            </div>
+
+            {/* Results Header */}
+            <div className="flex items-center justify-between mb-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                <div className="text-sm text-slate-600">
+                    Showing <span className="font-bold text-slate-900">{filteredTickets.length}</span> tickets for selected criteria
+                </div>
+                <div className="text-sm font-semibold text-indigo-600 px-3 py-1 bg-indigo-50 rounded-lg">
+                    Current View Revenue: ₹{currentRevenue}
+                </div>
+            </div>
+
+            {/* Table Area */}
+            <div className="admin-table-container">
+                <div className="overflow-x-auto">
+                    <table className="admin-table">
+                        <thead className="sticky top-0 z-10">
+                            <tr>
+                                <th>Student</th>
+                                <th>Route</th>
+                                <th>Shift</th>
+                                <th>Amount</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredTickets.length === 0 ? (
+                                <tr>
+                                    <td colSpan="7" className="text-center py-20 text-slate-400">
+                                        No tickets found for the selected filters.
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredTickets.map((ticket) => (
+                                    <tr key={ticket._id}>
+                                        <td>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 overflow-hidden">
+                                                    {ticket.studentPhoto ? <img src={ticket.studentPhoto} className="w-full h-full object-cover" /> : <Ticket size={18} />}
+                                                </div>
+                                                <div>
+                                                    <div className="font-semibold text-slate-900 text-sm">{ticket.studentName}</div>
+                                                    <div className="text-xs text-slate-500">{ticket.enrollmentNumber}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="text-sm font-medium text-slate-700">{ticket.routeName}</div>
+                                            <div className="text-xs text-slate-400">{ticket.selectedStop}</div>
+                                        </td>
+                                        <td>
+                                            <span className={`admin-badge ${ticket.shift === 'morning' ? 'admin-badge-warning' : 'admin-badge-info'}`}>
+                                                {ticket.shift}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="text-sm font-bold text-slate-800">₹{ticket.amount}</div>
+                                            {ticket.priceOverride && <div className="text-[10px] text-orange-600 font-bold uppercase">Overridden</div>}
+                                        </td>
+                                        <td>
+                                            <span className={`admin-badge ${ticket.paymentStatus === 'completed' ? 'admin-badge-success' : 'admin-badge-danger'}`}>
+                                                {ticket.paymentStatus}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${ticket.status === 'active' ? 'bg-indigo-500' : 'bg-slate-300'}`}></div>
+                                                <span className="text-sm text-slate-600 capitalize">{ticket.status}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex gap-1">
+                                                <button onClick={() => setQrModal({ show: true, ticket })} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors">
+                                                    <QrCode size={16} />
+                                                </button>
+                                                <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors">
+                                                    <MoreHorizontal size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* QR Ticket Modal */}
+            {qrModal.show && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setQrModal({ show: false, ticket: null })}>
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full relative overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="bg-indigo-600 p-6 text-white text-center">
+                            <h3 className="font-bold text-lg">Digital Ticket</h3>
+                            <p className="text-indigo-100 text-sm">Valid for {new Date(qrModal.ticket.travelDate).toLocaleDateString()}</p>
+                        </div>
+                        <div className="p-6 text-center">
+                            <div className="bg-slate-100 p-4 rounded-2xl inline-block mx-auto mb-4">
+                                <img src={qrModal.ticket.qrCode} className="w-48 h-48" alt="QR" />
+                            </div>
+                            <div className="space-y-1 mb-6">
+                                <div className="font-bold text-slate-900">{qrModal.ticket.studentName}</div>
+                                <div className="text-sm text-slate-500">{qrModal.ticket.routeName} • {qrModal.ticket.shift}</div>
+                                <div className="text-xs font-mono text-slate-400 mt-2">REF: {qrModal.ticket.referenceNumber}</div>
+                            </div>
+                            <button onClick={() => setQrModal({ show: false, ticket: null })} className="admin-btn admin-btn-secondary w-full justify-center">
+                                Close Ticket
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -29,6 +29,7 @@ import ScanHistory from './pages/admin/ScanHistory';
 import ManageBookingDays from './pages/admin/ManageBookingDays';
 import RouteManagement from './pages/admin/RouteManagement';
 import StudentDetailView from './pages/admin/StudentDetailView';
+import AdminLayout from './components/layout/AdminLayout';
 import DailyJourneySummary from './pages/admin/DailyJourneySummary';
 
 
@@ -98,14 +99,7 @@ function AppRoutes() {
 
 
 
-            <Route
-                path="/admin/passes/approved"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <ApprovedPasses />
-                    </ProtectedRoute>
-                }
-            />
+
 
             <Route
                 path="/student/apply-day-ticket"
@@ -145,191 +139,29 @@ function AppRoutes() {
 
             {/* Admin Routes */}
             <Route
-                path="/admin"
                 element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminDashboard />
+                        <AdminLayout />
                     </ProtectedRoute>
                 }
-            />
-
-            <Route
-                path="/admin/students"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <StudentsManagement />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/profile-changes"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <ProfileChanges />
-                    </ProtectedRoute>
-                }
-            />
-
-
-
-
-
-            <Route
-                path="/admin/buses"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <BusManagement />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/drivers"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <DriverManagement />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/live-attendance"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <LiveAttendance />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/create-day-ticket"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <CreateDayTicket />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/journey-report"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <DailyJourneyReport />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/checkpoint-analytics"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <CheckpointAnalytics />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/scan-history"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <ScanHistory />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/booking-days"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <ManageBookingDays />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/routes"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <RouteManagement />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/students/:id"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <StudentDetailView />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/admin/journey-summary"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <DailyJourneySummary />
-                    </ProtectedRoute>
-                }
-            />
-
-
-            {/* Driver routes */}
-            <Route
-                path="/driver"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <DriverDashboard />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/driver/scan"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <ScanPass />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/driver/route"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <RouteDetails />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/driver/checkpoint"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <DriverCheckpointForm />
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
-                path="/driver/scan-history"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <MyScanHistory />
-                    </ProtectedRoute>
-                }
-            />
-            {/* TODO: Uncomment when AdminTransportDashboard is created */}
-            {/* Admin Scan Pass */}
-            <Route
-                path="/admin/one-day-tickets"
-                element={
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <DailyTickets />
-                    </ProtectedRoute>
-                }
-            />
+            >
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/students" element={<StudentsManagement />} />
+                <Route path="/admin/profile-changes" element={<ProfileChanges />} />
+                <Route path="/admin/passes/approved" element={<ApprovedPasses />} />
+                <Route path="/admin/buses" element={<BusManagement />} />
+                <Route path="/admin/drivers" element={<DriverManagement />} />
+                <Route path="/admin/live-attendance" element={<LiveAttendance />} />
+                <Route path="/admin/create-day-ticket" element={<CreateDayTicket />} />
+                <Route path="/admin/journey-report" element={<DailyJourneyReport />} />
+                <Route path="/admin/checkpoint-analytics" element={<CheckpointAnalytics />} />
+                <Route path="/admin/scan-history" element={<ScanHistory />} />
+                <Route path="/admin/booking-days" element={<ManageBookingDays />} />
+                <Route path="/admin/routes" element={<RouteManagement />} />
+                <Route path="/admin/students/:id" element={<StudentDetailView />} />
+                <Route path="/admin/journey-summary" element={<DailyJourneySummary />} />
+                <Route path="/admin/one-day-tickets" element={<DailyTickets />} />
+            </Route>
 
 
 

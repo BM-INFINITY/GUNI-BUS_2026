@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { admin } from '../../services/api';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './BusManagement.css';
 
 export default function BusManagement() {
+    const navigate = useNavigate();
     const [buses, setBuses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -92,11 +95,37 @@ export default function BusManagement() {
     if (loading) return <div className="loading">Loading buses...</div>;
 
     return (
-        <div className="bus-management">
-            <header className="page-header">
-                <h2>🚌 Bus Management</h2>
-                <button className="primary-btn" onClick={handleCreate}>+ Add New Bus</button>
+        <div className="admin-page-container">
+            <header className="page-header-premium">
+                <div className="header-hero-box">
+
+                    {/* Left Section */}
+                    <div className="flex items-center gap-4">
+
+                        <button
+                            className="back-hero-btn"
+                            onClick={() => navigate('/admin')}
+                        >
+                            <ArrowLeft size={22} />
+                        </button>
+
+                        <div>
+                            <h1>Bus Management</h1>
+                        </div>
+
+                    </div>
+
+                    {/* Right Section */}
+                </div>
             </header>
+            <div className="flex flex-col items-end">
+                <button
+                    className="admin-btn admin-btn-primary"
+                    onClick={handleCreate}
+                >
+                    +
+                </button>
+            </div>
 
             <div className="table-container">
                 <table>

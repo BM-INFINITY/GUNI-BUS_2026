@@ -19,7 +19,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        origin: process.env.CLIENT_URL || "https://nc2l25sv-5173.inc1.devtunnels.ms",
         methods: ["GET", "POST", "PUT", "DELETE"],
     },
 });
@@ -28,15 +28,19 @@ const io = socketIo(server, {
 app.set("io", io);
 
 // Middleware
-app.use(
-    cors({
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE"],
-    }),
-);
+/* app.use(cors({ origin: '*' }));*/
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Global Request Logger
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
 
 // Routes
 const authRoutes = require("./routes/auth");
@@ -118,7 +122,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: "Internal server error" });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

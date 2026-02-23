@@ -26,6 +26,10 @@ export const AuthProvider = ({ children }) => {
             console.log('AuthContext: user set', user);
             return { success: true, redirectTo };
         } catch (error) {
+            console.error('Login error details:', error);
+            if (error.response) {
+                console.error('Error response:', error.response.data);
+            }
             return {
                 success: false,
                 message: error.response?.data?.message || 'Login failed'

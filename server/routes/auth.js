@@ -7,16 +7,21 @@ const User = require('../models/User');
 // Unified Login
 router.post('/login', async (req, res) => {
     try {
-        const { loginId, password } = req.body;
+        const { password } = req.body;
+        const loginId = req.body.loginId ? req.body.loginId.trim() : '';
+
+        console.log('Login Attempt for ID:', `"${loginId}"`);
 
         // Try determining if it's an enrollment number or employee ID
         // Simplified: Search in both fields
         const user = await User.findOne({
             $or: [
-                { enrollmentNumber: loginId },
-                { employeeId: loginId }
+                { enrollmentNumber: { $regex: new RegExp(`^${loginId}$`, 'i') } },
+                { employeeId: { $regex: new RegExp(`^${loginId}$`, 'i') } }
             ]
         });
+
+        console.log('Login Attempt:', { loginId, userFound: !!user });
 
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
@@ -24,6 +29,7 @@ router.post('/login', async (req, res) => {
 
         // Check password
         const isMatch = await bcrypt.compare(password, user.password);
+        console.log('Password Match:', isMatch);
 
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });

@@ -32,7 +32,7 @@ function parseExcelDate(value) {
 
 // Create new student (Admin only)
 // Bulk Upload Students (CSV)
-router.post('/students/upload', auth, isAdmin, upload.single('file'), async(req, res) => {
+router.post('/students/upload', auth, isAdmin, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
@@ -44,7 +44,7 @@ router.post('/students/upload', auth, isAdmin, upload.single('file'), async(req,
         stream
             .pipe(csv())
             .on('data', (data) => results.push(data))
-            .on('end', async() => {
+            .on('end', async () => {
                 let successCount = 0;
                 let failCount = 0;
                 const errors = [];
@@ -126,7 +126,7 @@ router.post('/students/upload', auth, isAdmin, upload.single('file'), async(req,
 });
 
 // Create new student (Admin only - Single)
-router.post('/students', auth, isAdmin, async(req, res) => {
+router.post('/students', auth, isAdmin, async (req, res) => {
     try {
         const {
             enrollmentNumber,
@@ -191,7 +191,7 @@ router.post('/students', auth, isAdmin, async(req, res) => {
 
 // Get all students (Admin only)
 // Get all students (Admin only) - Enhanced with Filters
-router.get('/students', auth, isAdmin, async(req, res) => {
+router.get('/students', auth, isAdmin, async (req, res) => {
     try {
         const { search, department, year, routeId, shift, page = 1, limit = 20 } = req.query;
 
@@ -202,23 +202,40 @@ router.get('/students', auth, isAdmin, async(req, res) => {
             {
                 $lookup: {
                     from: 'buspasses',
-                    let: { userId: '$_id' },
-                    pipeline: [{
+                    let: { userId: "$_id" },
+                    pipeline: [
+                        {
                             $match: {
                                 $expr: {
                                     $and: [
-                                        { $eq: ['$userId', '$$userId'] },
-                                        { $eq: ['$status', 'approved'] }
+                                        { $eq: ["$userId", "$$userId"] },
+                                        { $eq: ["$status", "approved"] }
                                     ]
                                 }
                             }
                         },
-                        { $limit: 1 } // Only need the most recent active pass
+                        { $sort: { createdAt: -1 } },
+                        { $limit: 1 }
                     ],
                     as: 'activePass'
                 }
             },
-            { $unwind: { path: '$activePass', preserveNullAndEmptyArrays: true } }
+            { $unwind: { path: '$activePass', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'routes',
+                    localField: 'activePass.route',
+                    foreignField: '_id',
+                    as: 'routeInfo'
+                }
+            },
+            { $unwind: { path: '$routeInfo', preserveNullAndEmptyArrays: true } },
+            {
+                $addFields: {
+                    // Provide route number at top level for easy access
+                    routeNumber: "$routeInfo.routeNumber"
+                }
+            }
         ];
 
         // Search Filters
@@ -290,7 +307,7 @@ router.get('/students', auth, isAdmin, async(req, res) => {
 
 // Get student details (Admin only)
 // Get student details (Admin only) - Enhanced with Logs
-router.get('/students/:id', auth, isAdmin, async(req, res) => {
+router.get('/students/:id', auth, isAdmin, async (req, res) => {
     try {
         const student = await User.findById(req.params.id).select('-password');
 
@@ -321,7 +338,7 @@ router.get('/students/:id', auth, isAdmin, async(req, res) => {
 });
 
 // Get all profile change requests (Admin only)
-router.get('/profile-change-requests', auth, isAdmin, async(req, res) => {
+router.get('/profile-change-requests', auth, isAdmin, async (req, res) => {
     try {
         const students = await User.find({
             role: 'student',
@@ -353,7 +370,7 @@ router.get('/profile-change-requests', auth, isAdmin, async(req, res) => {
 });
 
 // Approve profile change request (Admin only)
-router.put('/profile-change-requests/:studentId/approve', auth, isAdmin, async(req, res) => {
+router.put('/profile-change-requests/:studentId/approve', auth, isAdmin, async (req, res) => {
     try {
         const student = await User.findById(req.params.studentId);
 
@@ -401,7 +418,7 @@ router.put('/profile-change-requests/:studentId/approve', auth, isAdmin, async(r
 });
 
 // Reject profile change request (Admin only)
-router.put('/profile-change-requests/:studentId/reject', auth, isAdmin, async(req, res) => {
+router.put('/profile-change-requests/:studentId/reject', auth, isAdmin, async (req, res) => {
     try {
         const { rejectionReason } = req.body;
 
@@ -443,7 +460,7 @@ router.put('/profile-change-requests/:studentId/reject', auth, isAdmin, async(re
 });
 
 // Get today's attendance by route
-router.get('/today-attendance', auth, isAdmin, async(req, res) => {
+router.get('/today-attendance', auth, isAdmin, async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
 
@@ -464,7 +481,7 @@ router.get('/today-attendance', auth, isAdmin, async(req, res) => {
 
         // Populate route details
         const populatedData = await Promise.all(
-            data.map(async(item) => {
+            data.map(async (item) => {
                 const route = await require('../models/Route').findById(item._id);
                 return {
                     ...item,
@@ -486,7 +503,7 @@ router.get('/today-attendance', auth, isAdmin, async(req, res) => {
 // ===============================
 
 // Create new bus
-router.post('/buses', auth, isAdmin, async(req, res) => {
+router.post('/buses', auth, isAdmin, async (req, res) => {
     try {
         const {
             busNumber,
@@ -525,7 +542,7 @@ router.post('/buses', auth, isAdmin, async(req, res) => {
 });
 
 // Get all buses
-router.get('/buses', auth, isAdmin, async(req, res) => {
+router.get('/buses', auth, isAdmin, async (req, res) => {
     try {
         const buses = await Bus.find()
             .populate('assignedDriver', 'name mobile')
@@ -539,7 +556,7 @@ router.get('/buses', auth, isAdmin, async(req, res) => {
 });
 
 // Update bus
-router.put('/buses/:id', auth, isAdmin, async(req, res) => {
+router.put('/buses/:id', auth, isAdmin, async (req, res) => {
     try {
         const updatedBus = await Bus.findByIdAndUpdate(
             req.params.id,
@@ -554,7 +571,7 @@ router.put('/buses/:id', auth, isAdmin, async(req, res) => {
 });
 
 // Delete bus (Soft delete)
-router.delete('/buses/:id', auth, isAdmin, async(req, res) => {
+router.delete('/buses/:id', auth, isAdmin, async (req, res) => {
     try {
         const bus = await Bus.findById(req.params.id);
         if (!bus) return res.status(404).json({ message: 'Bus not found' });
@@ -575,7 +592,7 @@ router.delete('/buses/:id', auth, isAdmin, async(req, res) => {
 // ===============================
 
 // Create new driver
-router.post('/drivers', auth, isAdmin, async(req, res) => {
+router.post('/drivers', auth, isAdmin, async (req, res) => {
     try {
         const {
             name,
@@ -623,7 +640,7 @@ router.post('/drivers', auth, isAdmin, async(req, res) => {
 });
 
 // Get all drivers
-router.get('/drivers', auth, isAdmin, async(req, res) => {
+router.get('/drivers', auth, isAdmin, async (req, res) => {
     try {
         const drivers = await User.find({ role: 'driver' })
             .select('-password')
@@ -638,7 +655,7 @@ router.get('/drivers', auth, isAdmin, async(req, res) => {
 });
 
 // Update driver & assignments
-router.put('/drivers/:id', auth, isAdmin, async(req, res) => {
+router.put('/drivers/:id', auth, isAdmin, async (req, res) => {
     try {
         const { assignedBus, ...updateData } = req.body;
 

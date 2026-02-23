@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import {
+    Users,
+    Bus,
+    ShieldCheck,
+    Map,
+    Activity,
+    ClipboardList,
+    Clock
+} from 'lucide-react';
 import { admin } from '../../services/api';
 
 export default function AdminDashboard() {
-    const { user, logout } = useAuth();
     const navigate = useNavigate();
 
     const [stats, setStats] = useState({
         totalStudents: 0,
-        pendingChanges: 0
+        totalBuses: 0,
+        activeDrivers: 0,
+        activeRoutes: 0,
+        todayAttendance: 0
     });
 
     const [loading, setLoading] = useState(true);
@@ -20,14 +30,22 @@ export default function AdminDashboard() {
 
     const fetchStats = async () => {
         try {
-            const [studentsRes, changesRes] = await Promise.all([
+            const [studentsRes, busesRes, driversRes, routesRes, attendanceRes] = await Promise.all([
                 admin.getStudents({ page: 1, limit: 1 }),
-                admin.getProfileChangeRequests()
+                admin.getBuses(),
+                admin.getDrivers(),
+                admin.getRoutes(),
+                admin.getTodayAttendance()
             ]);
+
+            const totalAttendance = attendanceRes.data.reduce((acc, curr) => acc + curr.checkIns, 0);
 
             setStats({
                 totalStudents: studentsRes.data.totalStudents || 0,
-                pendingChanges: changesRes.data.length || 0
+                totalBuses: busesRes.data.length || 0,
+                activeDrivers: driversRes.data.length || 0,
+                activeRoutes: routesRes.data.length || 0,
+                todayAttendance: totalAttendance
             });
         } catch (error) {
             console.error('Error fetching stats:', error);
@@ -36,146 +54,133 @@ export default function AdminDashboard() {
         }
     };
 
-    const menuItems = [
+    const kpiCards = [
         {
-            icon: '👥',
-            title: 'Manage Students',
-            desc: 'Add, view, and manage student records',
-            path: '/admin/students',
-            count: stats.totalStudents
+            title: 'Total Students',
+            value: stats.totalStudents,
+            icon: Users,
+            color: 'text-blue-600',
+            bg: 'bg-blue-50',
+            border: 'border-blue'
         },
         {
-            icon: '📝',
-            title: 'Profile Changes',
-            desc: 'Review and approve profile change requests',
-            path: '/admin/profile-changes',
-            count: stats.pendingChanges,
-            highlight: stats.pendingChanges > 0
+            title: 'Total Buses',
+            value: stats.totalBuses,
+            icon: Bus,
+            color: 'text-indigo-600',
+            bg: 'bg-indigo-50',
+            border: 'border-indigo'
         },
         {
-            icon: '✅',
-            title: 'Approved Passes',
-            desc: 'View all approved bus passes with filters',
-            path: '/admin/passes/approved',
-            count: 'View'
+            title: 'Active Drivers',
+            value: stats.activeDrivers,
+            icon: ShieldCheck,
+            color: 'text-green-600',
+            bg: 'bg-green-50',
+            border: 'border-green'
         },
         {
-            icon: '',
-            title: 'Approved Tickets',
-            desc: 'View all approved Tickets with filters',
-            path: '/admin/one-day-tickets',
-            count: 'View'
+            title: 'Active Routes',
+            value: stats.activeRoutes,
+            icon: Map,
+            color: 'text-purple-600',
+            bg: 'bg-purple-50',
+            border: 'border-purple'
         },
         {
-            icon: '🔴',
-            title: 'Live Attendance',
-            desc: 'Real-time tracking of all routes',
-            path: '/admin/live-attendance',
-            count: 'Live'
-        },
-        {
-            icon: '🚌',
-            title: 'Manage Buses',
-            desc: 'Create and manage fleet',
-            path: '/admin/buses',
-            count: 'Manage'
-        },
-        {
-            icon: '👮‍♂️',
-            title: 'Manage Drivers',
-            desc: 'Create drivers and assign routes',
-            path: '/admin/drivers',
-            count: 'Manage'
-        },
-        {
-            icon: '🛣️',
-            title: 'Manage Routes',
-            desc: 'Create and manage bus routes',
-            path: '/admin/routes',
-            count: 'Configure'
-        },
-        {
-            icon: '📅',
-            title: 'Manage Booking Days',
-            desc: 'Enable/disable booking for specific dates',
-            path: '/admin/booking-days',
-            count: 'Configure'
-        },
-        {
-            icon: '📊',
-            title: 'Journey Summary',
-            desc: 'Daily journey reports and analytics',
-            path: '/admin/journey-summary',
-            count: 'View'
+            title: "Today's Attendance",
+            value: stats.todayAttendance,
+            icon: Activity,
+            color: 'text-orange-600',
+            bg: 'bg-orange-50',
+            border: 'border-orange'
         }
     ];
+    const recentActivity = [
+        { id: 1, type: 'pass', user: 'Rahul Sharma', action: 'Pass approved', time: '10 mins ago', icon: ShieldCheck, iconColor: 'text-green-500' },
+        { id: 2, type: 'profile', user: 'Anjali Patel', action: 'Profile update request', time: '25 mins ago', icon: Clock, iconColor: 'text-amber-500' },
+        { id: 3, type: 'bus', user: 'Route 101', action: 'Journey completed', time: '1 hour ago', icon: Bus, iconColor: 'text-indigo-500' },
+    ];
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+        );
+    }
 
     return (
-        <div className="dashboard modern-dashboard">
-            {/* Header */}
-            <header className="modern-header">
-                <div className="header-content">
-                    <div className="header-left">
-                        <h1>🚌 University Bus System</h1>
-                        <span className="user-badge">Admin Panel</span>
+        <div className="admin-dashboard-wrapper">
+            <header className="page-header-premium">
+                <div className="header-hero-box">
+                    <div>
+                        <h1>Dashboard Overview</h1>
+                        <p className="text-amber-400">Welcome, Admin</p>
                     </div>
-                    <div className="header-right">
-                        <span style={{ marginRight: '15px' }}>{user?.name}</span>
-                        <button className="secondary-btn" onClick={logout}>Logout</button>
-                    </div>
+
                 </div>
             </header>
 
-            {/* Content */}
-            <div className="dashboard-content modern-content">
-                <h2 style={{ marginBottom: '20px' }}>Welcome, Admin</h2>
-
-                {loading ? (
-                    <div className="loading">Loading dashboard...</div>
-                ) : (
-                    <div
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                            gap: '20px'
-                        }}
-                    >
-                        {menuItems.map((item, index) => (
-                            <div
-                                key={index}
-                                className="card modern-card"
-                                onClick={() => navigate(item.path)}
-                                style={{
-                                    cursor: 'pointer',
-                                    borderLeft: item.highlight
-                                        ? '4px solid #ffc107'
-                                        : '4px solid #4f46e5',
-                                    transition: 'transform 0.2s'
-                                }}
-                            >
-                                <div style={{ fontSize: '3rem', marginBottom: '10px' }}>
-                                    {item.icon}
-                                </div>
-                                <h3>{item.title}</h3>
-                                <p style={{ color: '#666', marginBottom: '15px' }}>
-                                    {item.desc}
-                                </p>
-                                <div
-                                    style={{
-                                        display: 'inline-block',
-                                        padding: '8px 16px',
-                                        background: item.highlight ? '#fff3cd' : '#e8f4fd',
-                                        borderRadius: '20px',
-                                        fontWeight: 'bold',
-                                        color: item.highlight ? '#856404' : '#1565c0'
-                                    }}
-                                >
-                                    {item.count}
+            {/* KPI Grid */}
+            <div className="admin-grid-stats">
+                {kpiCards.map((card, index) => {
+                    const Icon = card.icon;
+                    return (
+                        <div
+                            key={index}
+                            className={`admin-stat-card ${card.border}`}
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="admin-stat-title">{card.title}</span>
+                                <div className={`p-2 rounded-lg ${card.bg} ${card.color}`}>
+                                    <Icon size={20} />
                                 </div>
                             </div>
-                        ))}
+                            <div className="admin-stat-value">{card.value}</div>
+                            <div className="admin-stat-footer flex items-center text-green-600 font-medium">
+                                <span className="mr-1">↑ 12%</span>
+                                <span className="text-slate-400 font-normal">from last month</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="grid grid-cols-1 gap-8">
+                {/* Recent Activity */}
+                <div className="admin-table-container">
+                    <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                            <Activity size={18} className="text-indigo-600" />
+                            Recent Activity
+                        </h3>
+                        <button className="text-sm font-medium text-indigo-600 hover:text-indigo-700">View All</button>
                     </div>
-                )}
+                    <div className="divide-y divide-slate-100">
+                        {recentActivity.map((activity) => {
+                            const Icon = activity.icon;
+                            return (
+                                <div key={activity.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center gap-4">
+                                    <div className={`p-2 rounded-full bg-slate-100 ${activity.iconColor}`}>
+                                        <Icon size={16} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-slate-900 truncate">
+                                            {activity.action}
+                                        </p>
+                                        <p className="text-xs text-slate-500">
+                                            {activity.user}
+                                        </p>
+                                    </div>
+                                    <div className="text-xs text-slate-400 whitespace-nowrap">
+                                        {activity.time}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
         </div>
     );

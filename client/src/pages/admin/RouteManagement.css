@@ -1,0 +1,27 @@
+/* Page specific overrides for Route Management */
+.admin-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.admin-alert {
+    padding: 1rem;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.admin-alert-success {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.admin-alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}

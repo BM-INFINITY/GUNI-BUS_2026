@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { admin, routes } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import './DriverManagement.css';
 
 export default function DriverManagement() {
+    const navigate = useNavigate();
     const [drivers, setDrivers] = useState([]);
     const [buses, setBuses] = useState([]);
     const [allRoutes, setAllRoutes] = useState([]);
@@ -107,11 +110,37 @@ export default function DriverManagement() {
     if (loading) return <div className="loading">Loading drivers...</div>;
 
     return (
-        <div className="driver-management">
-            <header className="page-header">
-                <h2>👮‍♂️ Driver Management</h2>
-                <button className="primary-btn" onClick={handleCreate}>+ Add New Driver</button>
+        <div className="admin-page-container">
+            <header className="page-header-premium">
+                <div className="header-hero-box">
+
+                    {/* Left Section */}
+                    <div className="flex items-center gap-4">
+
+                        <button
+                            className="back-hero-btn"
+                            onClick={() => navigate('/admin')}
+                        >
+                            <ArrowLeft size={22} />
+                        </button>
+
+                        <div>
+                            <h1>Driver Management</h1>
+                        </div>
+
+                    </div>
+
+                    {/* Right Section */}
+                </div>
             </header>
+            <div className="flex flex-col items-end">
+                <button
+                    className="admin-btn admin-btn-primary"
+                    onClick={handleCreate}
+                >
+                    +
+                </button>
+            </div>
 
             <div className="table-container">
                 <table>

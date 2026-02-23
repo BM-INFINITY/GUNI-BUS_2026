@@ -1,7 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Calendar, Plus, Trash2, AlertCircle, Info } from 'lucide-react';
+import {
+    Calendar,
+    Plus,
+    Trash2,
+    AlertCircle,
+    Info,
+    ShieldCheck,
+    Ban,
+    MapPin,
+    Clock,
+    History,
+    CheckCircle2,
+    XCircle,
+    Globe,
+    ArrowLeft
+} from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -17,7 +32,7 @@ export default function ManageBookingDays() {
     const [formData, setFormData] = useState({
         routeId: '',
         date: '',
-        mode: 'enable', // 'enable' or 'disable'
+        mode: 'enable',
         allowedShifts: [],
         reason: ''
     });
@@ -35,11 +50,10 @@ export default function ManageBookingDays() {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
-
             setRoutes(routesRes.data);
             setExceptions(exceptionsRes.data);
         } catch (err) {
-            setError('Failed to load data');
+            setError('Failed to load operational data');
         } finally {
             setLoading(false);
         }
@@ -59,12 +73,10 @@ export default function ManageBookingDays() {
         const dayOfWeek = selectedDate.getDay();
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-        // If enabling a weekday (Mon-Sat) that's already allowed by default
         if (formData.mode === 'enable' && dayOfWeek >= 1 && dayOfWeek <= 6) {
-            setError(`⚠️ ${dayNames[dayOfWeek]} is already enabled by default. Use "Disable Booking" mode to block this date instead.`);
+            setError(`${dayNames[dayOfWeek]} is already an active booking day. Use "Block Booking" to restrict it instead.`);
             return false;
         }
-
         return true;
     };
 
@@ -72,316 +84,301 @@ export default function ManageBookingDays() {
         e.preventDefault();
         setError('');
         setSuccess('');
-
-        if (!validateForm()) {
-            return;
-        }
-
+        if (!validateForm()) return;
         setSubmitting(true);
-
         try {
             const token = localStorage.getItem('token');
-            const payload = {
-                ...formData,
-                routeId: formData.routeId === 'all' ? 'all' : formData.routeId
-            };
-
-            await axios.post(
-                `${API_URL}/admin/allowed-booking-days`,
-                payload,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            setSuccess(`Booking rule created successfully! ${formData.mode === 'enable' ? 'Enabled' : 'Blocked'} booking for selected date.`);
+            await axios.post(`${API_URL}/admin/allowed-booking-days`, formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setSuccess(`Operational override set: ${formData.mode === 'enable' ? 'Enabled' : 'Blocked'} ${new Date(formData.date).toLocaleDateString()}`);
             setFormData({ routeId: '', date: '', mode: 'enable', allowedShifts: [], reason: '' });
             fetchData();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create rule');
+            setError(err.response?.data?.message || 'Failed to update rules');
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Remove this booking rule?')) return;
-
+        if (!window.confirm('Are you sure you want to revert this operational override?')) return;
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`${API_URL}/admin/allowed-booking-days/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            setSuccess('Rule removed successfully');
+            setSuccess('Override removed successfully');
             fetchData();
         } catch (err) {
-            setError('Failed to remove rule');
+            setError('Failed to revert rules');
         }
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="flex items-center justify-center p-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
             </div>
         );
     }
 
     return (
-        <div className="dashboard">
-            <header className="modern-header">
-                <div className="header-content">
-                    <div className="header-left">
-                        <button onClick={() => navigate('/admin')} className="back-button">
-                            ← Back
-                        </button>
-                        <h1>📅 Manage Booking Days</h1>
+        <div className="admin-page-container">
+            {/* Info Notice */}
+            <header className="page-header-premium">
+                <div className="header-hero-box">
+
+                    <button
+                        className="back-hero-btn"
+                        onClick={() => navigate('/admin')}
+                    >
+                        <ArrowLeft size={22} />
+                    </button>
+
+                    <div>
+                        <h1>Booking Rules Management</h1>
                     </div>
+
                 </div>
             </header>
 
-            <div className="dashboard-content">
-                {/* Info Box */}
-                <div className="card" style={{ marginBottom: '20px', background: '#e0f2fe', borderLeft: '4px solid #0284c7' }}>
-                    <div style={{ display: 'flex', alignItems: 'start', gap: '10px' }}>
-                        <Info className="text-sky-700" size={20} style={{ marginTop: '2px' }} />
-                        <div>
-                            <p style={{ margin: 0, color: '#075985', fontWeight: '500' }}>How it works:</p>
-                            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', color: '#0c4a6e', fontSize: '14px' }}>
-                                <li><strong>Enable Booking:</strong> Allow booking on restricted days (e.g., Sundays)</li>
-                                <li><strong>Disable Booking:</strong> Block booking on normally allowed days (e.g., holidays on weekdays)</li>
-                                <li><strong>All Routes:</strong> Apply rule to all routes at once</li>
-                            </ul>
-                        </div>
-                    </div>
+            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-8 flex gap-4">
+                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg h-fit">
+                    <Info size={18} />
                 </div>
+                <div>
+                    <h4 className="text-sm font-bold text-indigo-900 mb-1">Operational Logic</h4>
+                    <p className="text-sm text-indigo-700">
+                        Default: Booking enabled Mon-Sat. Use overrides to allow Sunday bookings or block holiday dates.
+                        Global overrides (All Routes) take precedence.
+                    </p>
+                </div>
+            </div>
 
-                {/* Alert Messages */}
-                {(error || success) && (
-                    <div className={`card ${error ? 'border-l-4 border-red-500 bg-red-50' : 'border-l-4 border-green-500 bg-green-50'}`} style={{ marginBottom: '20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <AlertCircle className={error ? 'text-red-600' : 'text-green-600'} size={20} />
-                            <p className={error ? 'text-red-800' : 'text-green-800'} style={{ margin: 0 }}>
-                                {error || success}
-                            </p>
-                        </div>
-                    </div>
-                )}
+            {(error || success) && (
+                <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${error ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
+                    <AlertCircle size={18} />
+                    <span className="text-sm font-medium">{error || success}</span>
+                </div>
+            )}
 
-                {/* Create Rule Form */}
-                <div className="card" style={{ marginBottom: '20px' }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0 }}>
-                        <Plus size={20} />
-                        Create Booking Rule
+            {/* Configurator Card - 3 Column Layout */}
+            <div className="admin-card mb-10 overflow-hidden">
+                <div className="bg-indigo-500 border-b border-indigo-100 px-6 py-4">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <Plus size={16} />
+                        New Operational Rule
                     </h3>
-
-                    <form onSubmit={handleSubmit}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Action</label>
-                                <select
-                                    value={formData.mode}
-                                    onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
-                                    required
-                                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                                >
-                                    <option value="enable">✅ Enable Booking</option>
-                                    <option value="disable">🚫 Disable Booking</option>
-                                </select>
-                                <small style={{ color: '#666', fontSize: '12px' }}>
-                                    {formData.mode === 'enable' ? 'Allow booking on restricted days (Sundays)' : 'Block booking on allowed days (holidays)'}
-                                </small>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Column 1: Scope */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                                <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px]">1</span>
+                                Target Scope
                             </div>
-
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Route</label>
-                                <select
-                                    value={formData.routeId}
-                                    onChange={(e) => setFormData({ ...formData, routeId: e.target.value })}
-                                    required
-                                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                                >
-                                    <option value="">-- Select Route --</option>
-                                    <option value="all">🌐 All Routes</option>
-                                    {routes.map(route => (
-                                        <option key={route._id} value={route._id}>
-                                            {route.routeName} ({route.routeNumber})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Date</label>
-                                <input
-                                    type="date"
-                                    value={formData.date}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    required
-                                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Shifts</label>
-                                <div style={{ display: 'flex', gap: '10px', paddingTop: '8px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                            <div className="space-y-4">
+                                <div className="admin-form-group">
+                                    <label>Select Route</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                        <select
+                                            className="admin-select w-full pl-9"
+                                            value={formData.routeId}
+                                            onChange={(e) => setFormData({ ...formData, routeId: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">-- Select Target --</option>
+                                            <option value="all">🌐 All Routes (Global)</option>
+                                            {routes.map(r => <option key={r._id} value={r._id}>{r.routeName}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="admin-form-group">
+                                    <label>Override Date</label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                         <input
-                                            type="checkbox"
-                                            checked={formData.allowedShifts.includes('morning')}
-                                            onChange={() => handleShiftToggle('morning')}
+                                            type="date"
+                                            className="admin-input w-full pl-9"
+                                            min={new Date().toISOString().split('T')[0]}
+                                            value={formData.date}
+                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                            required
                                         />
-                                        Morning
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.allowedShifts.includes('afternoon')}
-                                            onChange={() => handleShiftToggle('afternoon')}
-                                        />
-                                        Afternoon
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>Reason (Optional)</label>
-                            <input
-                                type="text"
-                                value={formData.reason}
-                                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                placeholder={formData.mode === 'enable' ? 'e.g., Special event, University function' : 'e.g., National holiday, Maintenance day'}
-                                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
-                            />
+                        {/* Column 2: Configuration */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                                <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px]">2</span>
+                                Rule Config
+                            </div>
+                            <div className="space-y-6">
+                                <div className="admin-form-group">
+                                    <label>Action Type</label>
+                                    <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, mode: 'enable' })}
+                                            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${formData.mode === 'enable' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            <CheckCircle2 size={14} />
+                                            Enable
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, mode: 'disable' })}
+                                            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${formData.mode === 'disable' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        >
+                                            <XCircle size={14} />
+                                            Block
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="admin-form-group">
+                                    <label>Apply to Shifts</label>
+                                    <div className="flex gap-4 p-3 bg-white border border-slate-200 rounded-xl">
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                checked={formData.allowedShifts.includes('morning')}
+                                                onChange={() => handleShiftToggle('morning')}
+                                            />
+                                            <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600">Morning</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                checked={formData.allowedShifts.includes('afternoon')}
+                                                onChange={() => handleShiftToggle('afternoon')}
+                                            />
+                                            <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600">Afternoon</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={submitting || formData.allowedShifts.length === 0}
-                            className="primary-btn"
-                            style={{ opacity: (submitting || formData.allowedShifts.length === 0) ? 0.5 : 1 }}
-                        >
-                            {submitting ? 'Creating...' : (formData.mode === 'enable' ? '✅ Enable Booking' : '🚫 Block Booking')}
-                        </button>
-                    </form>
-                </div>
+                        {/* Column 3: Documentation */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                                <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px]">3</span>
+                                Confirmation
+                            </div>
+                            <div className="space-y-4">
+                                <div className="admin-form-group">
+                                    <label>Reason / Note</label>
+                                    <textarea
+                                        className="admin-input w-full min-h-[90px] py-3"
+                                        placeholder="e.g. National Holiday, Special Convocation Event..."
+                                        value={formData.reason}
+                                        onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                                    ></textarea>
+                                </div>
+                                <button
+                                    type="submit"
+                                    disabled={submitting || formData.allowedShifts.length === 0 || !formData.date || !formData.routeId}
+                                    className="admin-btn admin-btn-primary w-full justify-center h-[46px] disabled:opacity-50"
+                                >
+                                    {submitting ? 'Updating System...' : (formData.mode === 'enable' ? 'Set Active Rule' : 'Set Blocking Rule')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
 
-                {/* Existing Rules */}
-                <div className="card">
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0 }}>
-                        <Calendar size={20} />
-                        Active Booking Rules ({exceptions.length})
-                    </h3>
+            {/* Active Rules List */}
+            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <History size={20} className="text-indigo-600" />
+                Active Overrides
+            </h3>
 
-                    {exceptions.length === 0 ? (
-                        <p style={{ color: '#666', textAlign: 'center', padding: '40px 0' }}>
-                            No booking rules created yet
-                        </p>
-                    ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Mode</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Date</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Day</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Route</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Shifts</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Reason</th>
-                                        <th style={{ padding: '12px', textAlign: 'left' }}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {exceptions.map((exception) => {
-                                        const date = new Date(exception.date);
-                                        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-                                        return (
-                                            <tr key={exception._id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                                                <td style={{ padding: '12px' }}>
-                                                    <span style={{
-                                                        padding: '4px 8px',
-                                                        borderRadius: '4px',
-                                                        background: exception.mode === 'enable' ? '#d1fae5' : '#fee2e2',
-                                                        color: exception.mode === 'enable' ? '#065f46' : '#991b1b',
-                                                        fontSize: '12px',
-                                                        fontWeight: '500'
-                                                    }}>
-                                                        {exception.mode === 'enable' ? '✅ Enable' : '🚫 Block'}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '12px' }}>{date.toLocaleDateString()}</td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <span style={{
-                                                        padding: '4px 8px',
-                                                        borderRadius: '4px',
-                                                        background: date.getDay() === 0 ? '#fef3c7' : '#e0e7ff',
-                                                        color: date.getDay() === 0 ? '#92400e' : '#3730a3',
-                                                        fontSize: '12px',
-                                                        fontWeight: '500'
-                                                    }}>
-                                                        {dayNames[date.getDay()]}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    {exception.route ? (
-                                                        <>
-                                                            <strong>{exception.route.routeName}</strong>
-                                                            <br />
-                                                            <small style={{ color: '#666' }}>{exception.route.routeNumber}</small>
-                                                        </>
-                                                    ) : (
-                                                        <span style={{
-                                                            padding: '4px 8px',
-                                                            background: '#dbeafe',
-                                                            borderRadius: '4px',
-                                                            fontSize: '12px',
-                                                            fontWeight: '500',
-                                                            color: '#1e40af'
-                                                        }}>
-                                                            🌐 All Routes
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    {exception.allowedShifts.map(shift => (
-                                                        <span
-                                                            key={shift}
-                                                            style={{
-                                                                display: 'inline-block',
-                                                                padding: '2px 6px',
-                                                                margin: '2px',
-                                                                borderRadius: '3px',
-                                                                background: shift === 'morning' ? '#fef3c7' : '#dbeafe',
-                                                                color: shift === 'morning' ? '#92400e' : '#1e40af',
-                                                                fontSize: '11px'
-                                                            }}
-                                                        >
-                                                            {shift}
+            <div className="admin-table-container">
+                <div className="overflow-x-auto">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Schedule</th>
+                                <th>Route / Scope</th>
+                                <th>Shifts</th>
+                                <th>Reason</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {exceptions.length === 0 ? (
+                                <tr>
+                                    <td colSpan="6" className="text-center py-12 text-slate-400">
+                                        No active operational overrides found.
+                                    </td>
+                                </tr>
+                            ) : (
+                                exceptions.map((rule) => {
+                                    const date = new Date(rule.date);
+                                    const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                                    return (
+                                        <tr key={rule._id} className={isPast ? 'opacity-50' : ''}>
+                                            <td>
+                                                <span className={`admin-badge ${rule.mode === 'enable' ? 'admin-badge-success' : 'admin-badge-danger'}`}>
+                                                    {rule.mode === 'enable' ? 'Enabled' : 'Blocked'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="font-semibold text-slate-900 text-sm">{date.toLocaleDateString()}</div>
+                                                <div className="text-[10px] uppercase font-bold text-slate-400">{date.toLocaleDateString('en-US', { weekday: 'long' })}</div>
+                                            </td>
+                                            <td>
+                                                {rule.route ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <MapPin size={14} className="text-slate-400" />
+                                                        <span className="text-sm font-medium text-slate-700">{rule.route.routeName}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-2 py-1 rounded w-fit">
+                                                        <Globe size={14} />
+                                                        <span className="text-[10px] font-bold uppercase">All Routes</span>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <div className="flex gap-1">
+                                                    {rule.allowedShifts.map(s => (
+                                                        <span key={s} className="text-[10px] font-bold uppercase px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                                            {s}
                                                         </span>
                                                     ))}
-                                                </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <small style={{ color: '#666' }}>{exception.reason || '-'}</small>
-                                                </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <button
-                                                        onClick={() => handleDelete(exception._id)}
-                                                        className="secondary-btn"
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px' }}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                        Remove
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <p className="text-xs text-slate-500 max-w-[200px] truncate" title={rule.reason}>
+                                                    {rule.reason || <span className="italic">No reason provided</span>}
+                                                </p>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    onClick={() => handleDelete(rule._id)}
+                                                    className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                                                    title="Remove Rule"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
