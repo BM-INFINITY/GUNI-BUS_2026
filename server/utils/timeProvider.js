@@ -2,46 +2,34 @@ const moment = require('moment-timezone');
 
 /**
  * CENTRALIZED TIME PROVIDER
- * 
+ *
  * Rules:
- * 1. NODE_ENV === 'production' -> INDISPUTABLE REAL TIME (IST)
- * 2. NODE_ENV === 'development' ->
- *      a. TIME_MODE === 'MOCK' && req.body.mockTime -> Use mockTime
- *      b. Otherwise -> Use REAL TIME (IST)
+ * 1. NODE_ENV === 'production' → always uses real IST time (mockTime is IGNORED)
+ * 2. NODE_ENV === 'development' → uses req.body.mockTime if provided, else real IST time
  */
 
-/**
- * Get the current time for the request context
- * @param {Object} req - Express request object
- * @returns {Date} Javascript Date object (equivalent to new Date())
- */
 const getCurrentTime = (req) => {
-    // 1. SAFETY: REAL TIME IS DEFAULT
-    // (Production check removed per user request for DEMO purposes)
+    console.log('[TimeProvider] Request Body:', req?.body);
 
-    // 2. CHECK FOR MOCK MODE
-    // if (process.env.NODE_ENV === 'development') { // Check removed to allow PROD Usage
-    console.log('[TimeProvider] Request Body:', req?.body); // DEBUG LOG
-    // Check if MOCK mode is explicitly enabled
-    if (process.env.TIME_MODE === 'MOCK') {
-        // Check if request has valid mockTime
-        if (req && req.body && req.body.mockTime) {
+    // In development: honour mockTime from scan request body
+    if (process.env.NODE_ENV !== 'production') {
+        if (req?.body?.mockTime) {
             const mock = moment(req.body.mockTime);
             if (mock.isValid()) {
-                console.info(`[DEV] Using MOCK TIME: ${mock.format()}`);
+                console.info(`[DEV] Using MOCK TIME: ${mock.format('YYYY-MM-DD HH:mm:ss z')} (IST: ${mock.tz('Asia/Kolkata').format('HH:mm')})`);
                 return mock.toDate();
             } else {
                 console.warn('[TimeProvider] Invalid mockTime format:', req.body.mockTime);
             }
-        } else {
-            console.log('[TimeProvider] No mockTime in request');
         }
     }
-    // }
 
-    // Default: Real Time
-    return moment().tz("Asia/Kolkata").toDate();
+    // Default: Real IST time
+    const realTime = moment().tz('Asia/Kolkata').toDate();
+    console.info(`[TimeProvider] Using REAL TIME: ${moment(realTime).tz('Asia/Kolkata').format('HH:mm:ss')}`);
+    return realTime;
 };
+
 
 /**
  * Get standardized today string YYYY-MM-DD based on current contextual time

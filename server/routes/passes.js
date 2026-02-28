@@ -12,7 +12,7 @@ const { generateReferenceNumber } = require('../utils/referenceGenerator');
 // ===============================
 // Apply for bus pass (Student)
 // ===============================
-router.post('/apply', auth, async(req, res) => {
+router.post('/apply', auth, async (req, res) => {
     try {
         const { routeId, selectedStop, shift } = req.body;
 
@@ -91,7 +91,7 @@ router.post('/apply', auth, async(req, res) => {
 // ===============================
 // Get current user's passes
 // ===============================
-router.get('/my-passes', auth, async(req, res) => {
+router.get('/my-passes', auth, async (req, res) => {
     try {
         const passes = await BusPass.find({ userId: req.user._id })
             .populate('route', 'routeName routeNumber startPoint endPoint')
@@ -108,7 +108,7 @@ router.get('/my-passes', auth, async(req, res) => {
 // ===============================
 // Admin Pending Passes
 // ===============================
-router.get('/admin/pending', auth, isAdmin, async(req, res) => {
+router.get('/admin/pending', auth, isAdmin, async (req, res) => {
     try {
         const query = {
             status: 'pending',
@@ -131,7 +131,7 @@ router.get('/admin/pending', auth, isAdmin, async(req, res) => {
 // ===============================
 // Admin Approved Passes
 // ===============================
-router.get('/admin/approved', auth, isAdmin, async(req, res) => {
+router.get('/admin/approved', auth, isAdmin, async (req, res) => {
     try {
         const approvedPasses = await BusPass.find({ status: 'approved' })
             .populate('userId', 'name email enrollmentNumber')
@@ -149,7 +149,7 @@ router.get('/admin/approved', auth, isAdmin, async(req, res) => {
 // ===============================
 // Admin Pending Passes By Route
 // ===============================
-router.get('/admin/pending/by-route', auth, isAdmin, async(req, res) => {
+router.get('/admin/pending/by-route', auth, isAdmin, async (req, res) => {
     try {
         const pendingPasses = await BusPass.find({
             status: 'pending',
@@ -182,7 +182,7 @@ router.get('/admin/pending/by-route', auth, isAdmin, async(req, res) => {
 // ===============================
 // Admin Approved Passes By Route
 // ===============================
-router.get('/admin/approved/by-route', auth, isAdmin, async(req, res) => {
+router.get('/admin/approved/by-route', auth, isAdmin, async (req, res) => {
     try {
         const approvedPasses = await BusPass.find({ status: 'approved' })
             .populate('route', 'routeName routeNumber startPoint endPoint')
@@ -218,7 +218,7 @@ router.get('/admin/approved/by-route', auth, isAdmin, async(req, res) => {
 // ===============================
 // Approve Pass (Generate Secure QR)
 // ===============================
-router.put('/:id/approve', auth, isAdmin, async(req, res) => {
+router.put('/:id/approve', auth, isAdmin, async (req, res) => {
     try {
         const pass = await BusPass.findById(req.params.id);
 
@@ -268,7 +268,7 @@ router.put('/:id/approve', auth, isAdmin, async(req, res) => {
 // ===============================
 // Reject Pass
 // ===============================
-router.put('/:id/reject', auth, isAdmin, async(req, res) => {
+router.put('/:id/reject', auth, isAdmin, async (req, res) => {
     try {
         const { rejectionReason } = req.body;
 
@@ -285,6 +285,58 @@ router.put('/:id/reject', auth, isAdmin, async(req, res) => {
         res.json({ message: 'Bus pass rejected', pass });
     } catch (error) {
         console.error('Reject pass error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ===============================
+// Regenerate QR for a single pass (Admin)
+// Fixes passes created before QR_SECRET was set in .env
+// ===============================
+router.put('/:id/regenerate-qr', auth, isAdmin, async (req, res) => {
+    try {
+        const pass = await BusPass.findById(req.params.id);
+        if (!pass) return res.status(404).json({ message: 'Pass not found' });
+        if (pass.status !== 'approved') return res.status(400).json({ message: 'Only approved passes can have QR regenerated' });
+
+        const expiry = pass.validUntil.toISOString();
+        const rawData = `${pass._id}|${pass.userId}|${expiry}`;
+        const signature = crypto.createHmac('sha256', process.env.QR_SECRET).update(rawData).digest('hex');
+        const qrPayload = `GUNI|${rawData}|${signature}`;
+        pass.qrCode = await QRCode.toDataURL(qrPayload);
+        await pass.save();
+
+        console.log(`[QR] Regenerated QR for pass ${pass._id}`);
+        res.json({ message: 'QR regenerated successfully', passId: pass._id });
+    } catch (error) {
+        console.error('Regenerate QR error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ===============================
+// Bulk Regenerate QR for ALL approved passes (Admin)
+// Run once to fix all passes signed with old/missing QR_SECRET
+// ===============================
+router.put('/regenerate-qr-all', auth, isAdmin, async (req, res) => {
+    try {
+        const passes = await BusPass.find({ status: 'approved', validUntil: { $gte: new Date() } });
+        let count = 0;
+
+        for (const pass of passes) {
+            const expiry = pass.validUntil.toISOString();
+            const rawData = `${pass._id}|${pass.userId}|${expiry}`;
+            const signature = crypto.createHmac('sha256', process.env.QR_SECRET).update(rawData).digest('hex');
+            const qrPayload = `GUNI|${rawData}|${signature}`;
+            pass.qrCode = await QRCode.toDataURL(qrPayload);
+            await pass.save();
+            count++;
+        }
+
+        console.log(`[QR] Bulk regenerated ${count} pass QR codes`);
+        res.json({ message: `Regenerated QR for ${count} passes`, count });
+    } catch (error) {
+        console.error('Bulk regenerate QR error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });

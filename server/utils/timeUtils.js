@@ -26,9 +26,9 @@ function getISTDate() {
  * @returns {string} "HH:mm" (24-hour format)
  */
 function getTimeString(date) {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    // Use moment-timezone to correctly extract HH:mm in IST
+    // Do NOT use date.getHours() — it reads the OS local timezone (UTC on most servers)
+    return moment(date).tz('Asia/Kolkata').format('HH:mm');
 }
 
 /**

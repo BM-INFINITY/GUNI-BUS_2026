@@ -139,6 +139,20 @@ const userSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+
+  // Ride Intent Reward System
+  rewardPoints: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+
+  reliabilityScore: {
+    type: Number,
+    default: 100,
+    min: 0,
+    max: 100
   }
 
 }, {

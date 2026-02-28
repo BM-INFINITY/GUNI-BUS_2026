@@ -15,6 +15,10 @@ connectDB();
 const { initAbsenceDetection } = require('./jobs/absenceDetection');
 initAbsenceDetection();
 
+// Initialize Ride Intent cron jobs (requires io — initialized below after socket setup)
+let initRideIntentJobsFn;
+try { initRideIntentJobsFn = require('./jobs/rideIntentJobs').initRideIntentJobs; } catch (e) { console.error('rideIntentJobs not found', e); }
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -62,6 +66,8 @@ const allowedBookingDaysRoutes = require("./routes/allowedBookingDaysApi");
 const tripCheckpointsRoutes = require("./routes/tripCheckpoints");
 const journeyTrackingRoutes = require("./routes/journeyTracking");
 const lostFoundRoutes = require("./routes/lostFound");
+const rideIntentRoutes = require("./routes/rideIntent");
+const forecastRoutes = require("./routes/demandForecast");
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -92,6 +98,10 @@ app.use("/api/journey", journeyTrackingRoutes);
 // Lost & Found
 app.use("/api/lost-found", lostFoundRoutes);
 
+// Ride Intent & Demand Forecast
+app.use("/api/ride-intent", rideIntentRoutes);
+app.use("/api/forecast", forecastRoutes);
+
 // Health check route
 app.get("/api/health", (req, res) => {
     res.json({ status: "healthy", timestamp: new Date() });
@@ -111,6 +121,9 @@ io.on("connection", (socket) => {
         io.emit("bus:location:update", data);
     });
 });
+
+// Initialize Ride Intent cron jobs now that io is ready
+if (initRideIntentJobsFn) initRideIntentJobsFn(io);
 
 // Mock tracking API integration (simulates polling existing bus tracking system)
 setInterval(() => {
