@@ -1,200 +1,83 @@
-# University Bus Transportation System
+# GUNI-BUS 2026
 
-A streamlined bus pass management system with **admin-managed student data**, profile approval workflow, and simplified pass applications.
+GUNI-BUS is a comprehensive full-stack modern transport and logistics system built for university bus tracking, ticketing, and student management. It operates on a robust real-time MERN architecture with payment gateway integrations and complex role-based access control.
 
-## 🌟 Key Features
+## 🏗️ Technology Stack
 
-### Admin-Managed Student Data ⭐
-- **Admin feeds all student information** (enrollment, password, name, DOB, mobile, email, department, year)
-- **Profile change approval workflow** - Students request changes, admin approves
-- **Complete student management** - View, add, and manage all student records
-- **Pass management by route** - View pending and approved passes grouped by route
+### Frontend (Client App)
+- **Framework:** React 19 via Vite. 
+- **Styling:** Tailwind CSS (v3.4)
+- **Animations:** Framer Motion
+- **Data Fetching:** Axios and React Query
+- **Hardware Integration:** `html5-qrcode` library for high-speed QR ticket scanning.
+- **Payments:** `react-razorpay` for capturing pass and ticket payments.
+- **Real-Time:** `socket.io-client` handling live updates.
 
-### Student Workflow ⭐
-- **Smart redirect logic** - First time → Profile verification
-- **Profile completion required** - Must upload photo to access dashboard
-- **Simplified pass application** - Select route, boarding point, and shift (all details auto-filled)
-- **Request profile changes** - If data is wrong, request corrections with admin approval
-
-### Core Features
-- **Pass management**: Apply, approve/reject, QR code generation
-- **Role-based access**: Student and Admin portals
-- **Route management**: Multiple routes with stops and shifts
-- **Real-time status**: Track application status
-
----
-
-## 📚 Complete Documentation
-
-See **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** for:
-- Complete feature list
-- All 19 API endpoints
-- Frontend pages breakdown
-- Complete workflow guides
-- Setup instructions
+### Backend (Server API)
+- **Environment:** Node.js + Express (v5.2.1) Server.
+- **Database:** MongoDB / Mongoose.
+- **Authentication:** JWT (JSON Web Tokens) and `bcryptjs`.
+- **Real-Time Engine:** `socket.io` for emitting instantaneous events to the Admin dashboard.
+- **Background Jobs:** `node-cron` orchestrates time-bound events, like auto-expiring 30-day "Lost & Found" items.
+- **Payment Processing:** Official `razorpay` API SDK.
+- **File Handling:** `multer` for base64 file encodings.
 
 ---
 
-## 🚀 Quick Start
+## 🧩 Core Modules & Architecture
 
-### Prerequisites
-- Node.js (v16+)
-- MongoDB
-- npm or yarn
+The application dictates control through three strictly isolated User Roles: **Admin**, **Driver**, and **Student**. The Mongoose Database is highly normalized across 14 distinct models.
 
-### Installation
+### 1. Unified Authentication & Profiles
+* Handled securely via JWT.
+* Contains specific subsets of information based on the role (e.g., Students have an `enrollmentNumber`, Drivers have an `employeeId`).
 
-1. **Install dependencies**
-   ```bash
-   cd server && npm install
-   cd ../client && npm install
-   ```
+### 2. Digital Bus Passes & Payments
+* Allows students to apply for semester-long or yearly bus passes.
+* Tightly integrated with Razorpay where students generate an order on the server and complete the transaction on the frontend.
+* Follows an automatic approval path upon verified payment.
 
-2. **Environment Setup**
-   
-   Server `.env`:
-   ```env
-   MONGODB_URI=mongodb://localhost:27017/university-bus-system
-   JWT_SECRET=your_jwt_secret
-   PORT=5000
-   ```
+### 3. "One-Day" Ticketing Engine
+* An entirely separate flow from global passes, allowing casual riders to pre-book a single-day journey.
+* Incorporates a separate Payment Flow and a separate validation pipeline when scanning.
+* Governed by checking which prevents students from booking tickets on designated holidays or weekends.
 
-   Client `.env`:
-   ```env
-   VITE_API_URL=http://localhost:5000/api
-   ```
+### 4. Fleet & Route Management
+* Admins are responsible for defining Routes (with specific stops) and tying them to specific Buses.
+* Drivers are assigned specifically to these routes and buses, automatically mapping their mobile app environment to the correct physical bus.
 
-3. **Seed Database**
-   ```bash
-   cd server
-   node seedRoutes.js        # Seed routes
-   node seedDatabase.js      # Seed admin user
-   ```
+### 5. Boarding & Checkpoints
+* **Driver View:** A core utility where drivers physically scan either a static Bus Pass QR or a dynamic rotating One-Day Ticket QR.
+* The system instantly validates the legitimacy of the pass, checks duplicate scans, and marks attendance.
+* Drivers also tap "Checkpoints" along their route, generating exact arrival timings.
 
-4. **Run Application**
-   ```bash
-   # Terminal 1 - Backend
-   cd server && npm run dev
+### 6. Live Attendance & Advanced Analytics
+* This is where **Socket.io** comes alive. Whenever a driver scans a ticket, the backend shoots a socket event to the Admin Dashboard under "Live Attendance," updating graphs and passenger counts in real-time.
+* `StudentJourneyLog` and `RouteAnalytics` crunch raw log data to provide graphical load-balancing insights to admins (e.g., figuring out which routes are overcrowded).
 
-   # Terminal 2 - Frontend
-   cd client && npm run dev
-   ```
-
-5. **Access**
-   - Frontend: `http://localhost:5173`
-   - Backend: `http://localhost:5000/api`
-
-### Default Login
-- **Admin**: `admin` / `123`
+### 7. Community Noticeboard (Lost & Found)
+* A community-driven feature where students report lost items and drivers/admins report found items.
+* Employs advanced **Admin Moderation:** Admins can delete comments, lock chaotic threads, and bypass the driver to instantly report found items from within the depot.
+* **Auto-Cleanup:** A CRON job runs at 11:59 PM nightly to archive items inactive for > 30 days.
 
 ---
 
-## 🔄 System Workflow
+## 📈 Summary of Workflows
 
-### Admin Workflow
-1. Login to admin panel
-2. Add students with all details
-3. Approve/reject profile change requests
-4. View pending passes (grouped by route)
-5. Approve/reject pass applications
-6. View approved passes with QR codes
+1. **The Student Lifecycle:** Signs up -> Applies for a Route -> Pays via Razorpay -> Generates a QR Code on their phone -> Boards Bus and presents phone to Driver.
+2. **The Driver Lifecycle:** Logs into the mobile web app -> Receives route assignment -> Actively scans student QRs while they board -> Hits GPS/Route Checkpoints while driving.
+3. **The Admin Lifecycle:** Logs into desktop dashboard -> Manages overall fleet health -> Monitors live attendance via websockets -> Moderates the community noticeboard -> Pulls CSV/PDF export reports on daily ridership.
 
-### Student Workflow
-1. Login with enrollment + password (admin-provided)
-2. **First time**: Verify profile details
-3. Request changes if data is wrong
-4. Upload profile photo (mandatory)
-5. Access dashboard
-6. Apply for pass (route/boarding/shift)
-7. Wait for admin approval
+## Getting Started
 
----
+### Backend
+1. `cd server`
+2. Configure `.env` (MongoDB URI, Razorpay Keys, JWT Secrets)
+3. `npm install`
+4. `npm run dev`
 
-## 📁 Project Structure
-
-```
-GUNI-BUS/
-├── server/                      # Express backend
-│   ├── models/                 # 3 Mongoose models
-│   ├── routes/                 # 6 API route files (19 endpoints)
-│   ├── middleware/             # JWT authentication
-│   ├── seedDatabase.js         # Database seeder
-│   └── seedRoutes.js           # Routes seeder
-├── client/                      # React frontend (Vite)
-│   ├── src/pages/              # 9 page components
-│   ├── src/context/            # Auth context
-│   └── src/services/           # API layer
-└── README.md                    # This file
-```
-
----
-
-## 🎯 Core Endpoints
-
-### Student APIs
-- `POST /api/auth/login` - Login
-- `GET /api/profile` - Get profile
-- `POST /api/profile/request-change` - Request changes
-- `POST /api/passes/apply` - Apply for pass
-
-### Admin APIs
-- `POST /api/admin/students` - Create student
-- `GET /api/admin/students` - List students
-- `GET /api/admin/profile-change-requests` - View change requests
-- `PUT /api/admin/profile-change-requests/:id/approve` - Approve
-- `GET /api/passes/admin/pending/by-route` - Pending passes by route
-- `GET /api/passes/admin/approved/by-route` - Approved passes by route
-- `PUT /api/passes/:id/approve` - Approve pass
-
-**Total: 19 endpoints** - See walkthrough.md for complete list
-
----
-
-## 🛠️ Technology Stack
-
-**Frontend:**
-- React 18 + Vite
-- Modern CSS (custom styling)
-- React Router
-- Axios
-- Context API
-
-**Backend:**
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT Authentication
-- QR Code Generation
-- bcryptjs
-
----
-
-## 📊 Database Collections
-
-- `users` - Students & admins (with profile change requests)
-- `buspasses` - Pass applications (with student snapshots)
-- `routes` - Bus routes with stops and shifts
-
----
-
-## ✅ What's Included
-
-✅ Admin creates students with all data  
-✅ Student profile verification workflow  
-✅ Profile change request system  
-✅ Mandatory photo upload  
-✅ Smart dashboard redirect  
-✅ Simplified pass application  
-✅ Passes grouped by route (admin view)  
-✅ QR code generation  
-✅ Complete student management  
-
----
-
-## 📄 License
-
-MIT
-
----
-
-**System is 100% complete and production-ready!**  
-See [walkthrough.md](./walkthrough.md) for detailed implementation guide.
+### Frontend
+1. `cd client`
+2. Configure `.env` (Vite API URL, Razorpay Public Key)
+3. `npm install`
+4. `npm run dev`

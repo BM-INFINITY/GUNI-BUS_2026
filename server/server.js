@@ -30,8 +30,8 @@ app.set("io", io);
 // Middleware
 /* app.use(cors({ origin: '*' }));*/
 app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true
+    origin: process.env.CLIENT_URL,
+    credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -61,6 +61,7 @@ const adminTicketsRoutes = require("./routes/adminTickets");
 const allowedBookingDaysRoutes = require("./routes/allowedBookingDaysApi");
 const tripCheckpointsRoutes = require("./routes/tripCheckpoints");
 const journeyTrackingRoutes = require("./routes/journeyTracking");
+const lostFoundRoutes = require("./routes/lostFound");
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -87,6 +88,9 @@ app.use("/api/admin/allowed-booking-days", allowedBookingDaysRoutes);
 // Journey tracking and checkpoint routes
 app.use("/api/checkpoints", tripCheckpointsRoutes);
 app.use("/api/journey", journeyTrackingRoutes);
+
+// Lost & Found
+app.use("/api/lost-found", lostFoundRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
@@ -131,4 +135,14 @@ server.listen(PORT, () => {
         TIME_MODE: process.env.TIME_MODE,
     });
     console.log(`WebSocket server ready`);
+});
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`\n❌ Port ${PORT} is already in use.`);
+        console.error(`   Run: netstat -ano | findstr :${PORT}  then  taskkill /PID <pid> /F\n`);
+        process.exit(1);
+    } else {
+        throw err;
+    }
 });

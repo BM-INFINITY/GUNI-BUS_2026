@@ -31,6 +31,7 @@ import RouteManagement from './pages/admin/RouteManagement';
 import StudentDetailView from './pages/admin/StudentDetailView';
 import AdminLayout from './components/layout/AdminLayout';
 import DailyJourneySummary from './pages/admin/DailyJourneySummary';
+import AdminItemDetail from './pages/admin/AdminItemDetail';
 
 
 //Driver pages
@@ -39,6 +40,14 @@ import ScanPass from './pages/driver/ScanPass';
 import RouteDetails from './pages/driver/RouteDetails';
 import DriverCheckpointForm from './pages/driver/DriverCheckpointForm';
 import MyScanHistory from './pages/driver/MyScanHistory';
+import ReportFoundItem from './pages/driver/ReportFoundItem';
+
+// Lost & Found pages
+import LostAndFound from './pages/student/LostAndFound';
+import ItemDetail from './pages/student/ItemDetail';
+import ReportLostItem from './pages/student/ReportLostItem';
+import LostFoundDashboard from './pages/admin/LostFoundDashboard';
+import LostFoundAnalytics from './pages/admin/LostFoundAnalytics';
 
 const queryClient = new QueryClient();
 
@@ -137,6 +146,84 @@ function AppRoutes() {
                 }
             />
 
+            {/* Lost & Found — Student */}
+            <Route
+                path="/student/lost-and-found"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <LostAndFound />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/student/lost-and-found/item/:type/:id"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <ItemDetail />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/student/lost-and-found/report"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <ReportLostItem />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Lost & Found — Driver */}
+            <Route
+                path="/driver/report-found"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <ReportFoundItem />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Driver Routes */}
+            <Route
+                path="/driver"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <DriverDashboard />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/driver/scan"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <ScanPass />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/driver/route"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <RouteDetails />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/driver/checkpoint"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <DriverCheckpointForm />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/driver/scan-history"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <MyScanHistory />
+                    </ProtectedRoute>
+                }
+            />
+
             {/* Admin Routes */}
             <Route
                 element={
@@ -161,6 +248,12 @@ function AppRoutes() {
                 <Route path="/admin/students/:id" element={<StudentDetailView />} />
                 <Route path="/admin/journey-summary" element={<DailyJourneySummary />} />
                 <Route path="/admin/one-day-tickets" element={<DailyTickets />} />
+
+                {/* Lost Found Module */}
+                <Route path="/admin/lost-found" element={<LostFoundDashboard />} />
+                <Route path="/admin/lost-found/item/:type/:id" element={<AdminItemDetail />} />
+                <Route path="/admin/lost-found/analytics" element={<LostFoundAnalytics />} />
+                <Route path="/admin/settings" element={<div>Settings Component</div>} />
             </Route>
 
 

@@ -144,4 +144,32 @@ export const driver = {
     getRoute: () => api.get('/driver/route')
 };
 
+// Lost & Found
+export const lostFound = {
+    // Public Boards
+    getBoardFound: (params) => api.get('/lost-found/board/found', { params }),
+    getBoardReports: (params) => api.get('/lost-found/board/reports', { params }),
+
+    // Details & Comments
+    getItemDetails: (type, id) => api.get(`/lost-found/board/${type}/${id}`),
+    getComments: (type, id) => api.get(`/lost-found/${type}/${id}/comments`),
+    addComment: (type, id, data) => api.post(`/lost-found/${type}/${id}/comments`, data),
+
+    // Posting items
+    reportFoundItem: (data) => api.post('/lost-found/items', data),
+    reportLostItem: (data) => api.post('/lost-found/reports', data),
+    getMyReports: () => api.get('/lost-found/reports/my'),
+
+    // Admin management
+    getAllItemsList: () => api.get('/lost-found/items/all'),
+    getAllReportsList: () => api.get('/lost-found/reports/all'),
+    resolveItem: (id, data) => api.put(`/lost-found/items/${id}/resolve`, data),
+    markReportFound: (id, data) => api.put(`/lost-found/reports/${id}/mark-found`, data),
+    resolveReport: (id, data) => api.put(`/lost-found/reports/${id}/resolve`, data),
+
+    // Chat Moderation
+    deleteComment: (commentId) => api.delete(`/lost-found/comments/${commentId}`),
+    toggleChatEnabled: (type, id, data) => api.put(`/lost-found/${type === 'found' ? 'items' : 'reports'}/${id}/chat-toggle`, data),
+};
+
 export default api;

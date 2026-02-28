@@ -55,7 +55,7 @@ const StudentLayout = ({ children }) => {
         { icon: History, label: 'Journey History', path: '/student/journey-history' },
         { icon: Ticket, label: 'Buy Day Ticket', path: '/student/apply-day-ticket' },
         { icon: QrCode, label: 'My Day Tickets', path: '/student/my-day-tickets' },
-        { icon: Search, label: 'Lost & Found', path: '#', comingSoon: true },
+        { icon: Search, label: 'Lost & Found', path: '/student/lost-and-found' },
         { icon: Gift, label: 'Rewards', path: '#', comingSoon: true },
         { icon: AlertTriangle, label: 'Report Issue', path: '#', comingSoon: true },
     ];

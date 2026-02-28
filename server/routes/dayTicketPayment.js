@@ -7,11 +7,20 @@ const DayTicket = require('../models/DayTicket');
 const Route = require('../models/Route');
 const QRCode = require('qrcode');
 
-// Initialize Razorpay (SAME AS BUS PASS)
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// Lazy Razorpay initialization — prevents crash if keys are missing from .env
+let _razorpay = null;
+const getRazorpay = () => {
+    if (!_razorpay) {
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+            throw new Error('Razorpay keys not configured in .env');
+        }
+        _razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
+        });
+    }
+    return _razorpay;
+};
 
 // ===============================
 // Create Razorpay order
@@ -48,7 +57,7 @@ router.post('/create-order', auth, async (req, res) => {
             }
         };
 
-        const order = await razorpay.orders.create(options);
+        const order = await getRazorpay().orders.create(options);
 
         // Update ticket with order ID
         ticketApplication.razorpayOrderId = order.id;

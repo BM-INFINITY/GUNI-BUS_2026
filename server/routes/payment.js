@@ -8,11 +8,20 @@ const Route = require('../models/Route');
 const QRCode = require('qrcode');
 const { generateReferenceNumber } = require('../utils/referenceGenerator');
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// Lazy Razorpay initialization — prevents crash if keys are missing from .env
+let _razorpay = null;
+const getRazorpay = () => {
+    if (!_razorpay) {
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+            throw new Error('Razorpay keys not configured in .env (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)');
+        }
+        _razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
+        });
+    }
+    return _razorpay;
+};
 
 // Create Razorpay order
 router.post('/create-order', auth, async (req, res) => {
@@ -46,7 +55,7 @@ router.post('/create-order', auth, async (req, res) => {
             }
         };
 
-        const order = await razorpay.orders.create(options);
+        const order = await getRazorpay().orders.create(options);
 
         // Update pass with order ID
         passApplication.razorpayOrderId = order.id;

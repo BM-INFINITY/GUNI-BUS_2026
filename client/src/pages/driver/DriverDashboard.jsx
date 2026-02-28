@@ -139,6 +139,14 @@ export default function DriverDashboard() {
               <p>Stops & Path</p>
             </div>
           </button>
+
+          <button className="action-card secondary" onClick={() => navigate("/driver/report-found")}>
+            <div className="icon-wrapper">🎒</div>
+            <div className="action-text">
+              <h3>Report Found Item</h3>
+              <p>Log on-bus item</p>
+            </div>
+          </button>
         </section>
 
         {/* Checkpoint Control - NEW */}

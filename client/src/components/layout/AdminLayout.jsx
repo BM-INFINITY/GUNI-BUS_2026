@@ -18,7 +18,8 @@ import {
     ChevronDown,
     Menu,
     X,
-    ClipboardList
+    ClipboardList,
+    PackageSearch
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/admin.css';
@@ -47,6 +48,7 @@ const AdminLayout = () => {
         { icon: Map, label: 'Manage Routes', path: '/admin/routes' },
         { icon: Calendar, label: 'Manage Booking Days', path: '/admin/booking-days' },
         { icon: BarChart3, label: 'Journey Summary', path: '/admin/journey-summary' },
+        { icon: PackageSearch, label: 'Lost & Found', path: '/admin/lost-found' },
     ];
 
     const SidebarContent = () => (
