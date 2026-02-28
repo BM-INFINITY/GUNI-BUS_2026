@@ -14,6 +14,7 @@ import {
     History,
     Search,
     Gift,
+    TrendingUp,
     AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,7 +57,7 @@ const StudentLayout = ({ children }) => {
         { icon: Ticket, label: 'Buy Day Ticket', path: '/student/apply-day-ticket' },
         { icon: QrCode, label: 'My Day Tickets', path: '/student/my-day-tickets' },
         { icon: Search, label: 'Lost & Found', path: '/student/lost-and-found' },
-        { icon: Gift, label: 'Rewards', path: '#', comingSoon: true },
+        { icon: TrendingUp, label: 'Ride Intent & Rewards', path: '/student/ride-intent' },
         { icon: AlertTriangle, label: 'Report Issue', path: '#', comingSoon: true },
     ];
 

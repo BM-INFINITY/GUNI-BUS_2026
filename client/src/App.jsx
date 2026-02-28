@@ -48,6 +48,8 @@ import ItemDetail from './pages/student/ItemDetail';
 import ReportLostItem from './pages/student/ReportLostItem';
 import LostFoundDashboard from './pages/admin/LostFoundDashboard';
 import LostFoundAnalytics from './pages/admin/LostFoundAnalytics';
+import RideIntent from './pages/student/RideIntent';
+import DemandForecastDashboard from './pages/admin/DemandForecastDashboard';
 
 const queryClient = new QueryClient();
 
@@ -172,6 +174,16 @@ function AppRoutes() {
                 }
             />
 
+            {/* Ride Intent — Student */}
+            <Route
+                path="/student/ride-intent"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <RideIntent />
+                    </ProtectedRoute>
+                }
+            />
+
             {/* Lost & Found — Driver */}
             <Route
                 path="/driver/report-found"
@@ -253,6 +265,10 @@ function AppRoutes() {
                 <Route path="/admin/lost-found" element={<LostFoundDashboard />} />
                 <Route path="/admin/lost-found/item/:type/:id" element={<AdminItemDetail />} />
                 <Route path="/admin/lost-found/analytics" element={<LostFoundAnalytics />} />
+
+                {/* Demand Forecast Module */}
+                <Route path="/admin/demand-forecast" element={<DemandForecastDashboard />} />
+
                 <Route path="/admin/settings" element={<div>Settings Component</div>} />
             </Route>
 

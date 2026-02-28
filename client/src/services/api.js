@@ -172,4 +172,19 @@ export const lostFound = {
     toggleChatEnabled: (type, id, data) => api.put(`/lost-found/${type === 'found' ? 'items' : 'reports'}/${id}/chat-toggle`, data),
 };
 
+// Ride Intent
+export const rideIntent = {
+    submitIntent: (data) => api.post('/ride-intent', data),
+    getUpcoming: () => api.get('/ride-intent/upcoming'),
+    getHistory: () => api.get('/ride-intent/history'),
+};
+
+// Demand Forecast (Admin)
+export const forecast = {
+    getByDate: (date) => api.get(`/forecast/date/${date}`),
+    getAnalytics: () => api.get('/forecast/analytics'),
+    getLeaderboard: () => api.get('/forecast/leaderboard'),
+    getSummary: () => api.get('/forecast/summary'),
+};
+
 export default api;

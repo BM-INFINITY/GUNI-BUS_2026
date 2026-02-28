@@ -19,7 +19,8 @@ import {
     Menu,
     X,
     ClipboardList,
-    PackageSearch
+    PackageSearch,
+    TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/admin.css';
@@ -49,6 +50,7 @@ const AdminLayout = () => {
         { icon: Calendar, label: 'Manage Booking Days', path: '/admin/booking-days' },
         { icon: BarChart3, label: 'Journey Summary', path: '/admin/journey-summary' },
         { icon: PackageSearch, label: 'Lost & Found', path: '/admin/lost-found' },
+        { icon: TrendingUp, label: 'Demand Forecast', path: '/admin/demand-forecast' },
     ];
 
     const SidebarContent = () => (
