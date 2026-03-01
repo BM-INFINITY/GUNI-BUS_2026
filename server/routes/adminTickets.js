@@ -11,8 +11,50 @@ const crypto = require('crypto');
 const { generateReferenceNumber } = require('../utils/referenceGenerator');
 
 // ===============================
+// Get All Tickets (Admin — with filters)
+// ===============================
+router.get('/all', auth, isAdmin, async (req, res) => {
+    try {
+        const { date, routeId, status } = req.query;
+        const filter = {};
+
+        // Filter by travel date (exact day)
+        if (date) {
+            const start = new Date(date); start.setHours(0, 0, 0, 0);
+            const end = new Date(date); end.setHours(23, 59, 59, 999);
+            filter.travelDate = { $gte: start, $lte: end };
+        }
+
+        if (routeId) filter.route = routeId;
+
+        // Status mapping: frontend sends 'completed' for used tickets
+        if (status && status !== 'all') {
+            filter.status = status === 'completed' ? 'used' : status;
+        }
+
+        const tickets = await DayTicket.find(filter)
+            .populate('route', 'routeName routeNumber')
+            .sort({ travelDate: -1, createdAt: -1 })
+            .limit(500);
+
+        // Flatten routeName so frontend can use ticket.routeName directly
+        const result = tickets.map(t => ({
+            ...t.toObject(),
+            routeName: t.route?.routeName || '—',
+            routeNumber: t.route?.routeNumber || '—',
+        }));
+
+        res.json(result);
+    } catch (error) {
+        console.error('Get all tickets error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// ===============================
 // Search Student by Enrollment
 // ===============================
+
 router.get('/search-student', auth, isAdmin, async (req, res) => {
     try {
         const { enrollment } = req.query;
@@ -156,6 +198,16 @@ router.post('/create', auth, isAdmin, async (req, res) => {
 
         if (requestedDate < today) {
             return res.status(400).json({ message: 'Cannot create ticket for past dates' });
+        }
+
+        // Check route's allowed days (e.g. Sunday blocked if not in allowedDays)
+        const allowedDays = route.bookingRules?.allowedDays ?? [1, 2, 3, 4, 5, 6];
+        const requestedDayOfWeek = requestedDate.getDay(); // 0 = Sunday
+        if (!allowedDays.includes(requestedDayOfWeek)) {
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            return res.status(400).json({
+                message: `Tickets cannot be issued for ${dayNames[requestedDayOfWeek]}. This day is not operational for route "${route.routeName}".`
+            });
         }
 
         // Check for active bus pass conflict (same route + same shift)

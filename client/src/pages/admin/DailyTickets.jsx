@@ -33,7 +33,7 @@ export default function DailyTickets() {
     });
 
     const [filters, setFilters] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: '',          // empty = show all dates (not locked to today)
         route: '',
         shift: 'all',
         status: 'all',
@@ -130,7 +130,7 @@ export default function DailyTickets() {
     const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
 
     const resetFilters = () => setFilters({
-        date: new Date().toISOString().split('T')[0],
+        date: '',
         route: '',
         shift: 'all',
         status: 'all',
@@ -277,6 +277,7 @@ export default function DailyTickets() {
                         <thead className="sticky top-0 z-10">
                             <tr>
                                 <th>Student</th>
+                                <th>Travel Date</th>
                                 <th>Route</th>
                                 <th>Shift</th>
                                 <th>Amount</th>
@@ -304,6 +305,13 @@ export default function DailyTickets() {
                                                     <div className="font-semibold text-slate-900 text-sm">{ticket.studentName}</div>
                                                     <div className="text-xs text-slate-500">{ticket.enrollmentNumber}</div>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="font-bold text-slate-800 text-xs">
+                                                {ticket.travelDate
+                                                    ? new Date(ticket.travelDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: '2-digit' })
+                                                    : '—'}
                                             </div>
                                         </td>
                                         <td>

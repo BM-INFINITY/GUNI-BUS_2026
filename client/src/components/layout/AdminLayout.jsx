@@ -20,7 +20,10 @@ import {
     X,
     ClipboardList,
     PackageSearch,
-    TrendingUp
+    TrendingUp,
+    BookOpen,
+    TicketPlus,
+    MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/admin.css';
@@ -43,14 +46,17 @@ const AdminLayout = () => {
         { icon: UserCheck, label: 'Profile Change Requests', path: '/admin/profile-changes' },
         { icon: CheckCircle, label: 'Approved Passes', path: '/admin/passes/approved' },
         { icon: Ticket, label: 'Approved Tickets', path: '/admin/one-day-tickets' },
+        { icon: TicketPlus, label: 'Issue Ticket', path: '/admin/create-day-ticket' },
         { icon: Activity, label: 'Live Attendance', path: '/admin/live-attendance' },
         { icon: Bus, label: 'Manage Buses', path: '/admin/buses' },
         { icon: ShieldCheck, label: 'Manage Drivers', path: '/admin/drivers' },
         { icon: Map, label: 'Manage Routes', path: '/admin/routes' },
         { icon: Calendar, label: 'Manage Booking Days', path: '/admin/booking-days' },
         { icon: BarChart3, label: 'Journey Summary', path: '/admin/journey-summary' },
+        { icon: BookOpen, label: 'Student Journey Logs', path: '/admin/student-journey' },
         { icon: PackageSearch, label: 'Lost & Found', path: '/admin/lost-found' },
         { icon: TrendingUp, label: 'Demand Forecast', path: '/admin/demand-forecast' },
+        { icon: MessageSquare, label: 'Complaints', path: '/admin/complaints' },
     ];
 
     const SidebarContent = () => (

@@ -72,7 +72,11 @@ export const dayTickets = {
 // Journey
 export const journey = {
     getLogs: (days) => api.get(`/journey/my-logs?days=${days}`),
-    getDailySummary: (date) => api.get(`/journey/daily-summary/${date}`)
+    getDailySummary: (date) => api.get(`/journey/daily-summary/${date}`),
+    getRouteSummary: (date) => api.get(`/journey/route-summary/${date}`),
+    searchStudents: (q) => api.get(`/journey/student-search?q=${encodeURIComponent(q)}`),
+    getStudentJourney: (userId, startDate, endDate) =>
+        api.get(`/journey/student/${userId}?startDate=${startDate}&endDate=${endDate}`),
 };
 
 // Payment
@@ -185,6 +189,21 @@ export const forecast = {
     getAnalytics: () => api.get('/forecast/analytics'),
     getLeaderboard: () => api.get('/forecast/leaderboard'),
     getSummary: () => api.get('/forecast/summary'),
+};
+
+// Complaints
+export const complaints = {
+    // Student
+    submit: (data) => api.post('/complaints', data),
+    getMine: () => api.get('/complaints/my'),
+    sendMessage: (id, text) => api.post(`/complaints/my/${id}/message`, { text }),
+
+    // Admin
+    getAll: (params) => api.get('/complaints/admin/all', { params }),
+    getAnalytics: () => api.get('/complaints/admin/analytics'),
+    getById: (id) => api.get(`/complaints/admin/${id}`),
+    updateStatus: (id, data) => api.put(`/complaints/admin/${id}/status`, data),
+    sendAdminMessage: (id, text) => api.post(`/complaints/admin/${id}/message`, { text }),
 };
 
 export default api;

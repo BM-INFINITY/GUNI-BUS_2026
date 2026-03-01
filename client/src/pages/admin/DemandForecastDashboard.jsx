@@ -156,7 +156,7 @@ export default function DemandForecastDashboard() {
                             <input
                                 type="date"
                                 value={selectedDate}
-                                min={todayPlus(0)}
+                                min={todayPlus(-30)}
                                 max={todayPlus(7)}
                                 onChange={e => setSelectedDate(e.target.value)}
                                 className="admin-input ml-auto text-sm"

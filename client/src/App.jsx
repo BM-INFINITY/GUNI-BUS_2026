@@ -31,6 +31,7 @@ import RouteManagement from './pages/admin/RouteManagement';
 import StudentDetailView from './pages/admin/StudentDetailView';
 import AdminLayout from './components/layout/AdminLayout';
 import DailyJourneySummary from './pages/admin/DailyJourneySummary';
+import StudentJourneyLogs from './pages/admin/StudentJourneyLogs';
 import AdminItemDetail from './pages/admin/AdminItemDetail';
 
 
@@ -49,6 +50,9 @@ import ReportLostItem from './pages/student/ReportLostItem';
 import LostFoundDashboard from './pages/admin/LostFoundDashboard';
 import LostFoundAnalytics from './pages/admin/LostFoundAnalytics';
 import RideIntent from './pages/student/RideIntent';
+import RaiseComplaint from './pages/student/RaiseComplaint';
+import MyComplaints from './pages/student/MyComplaints';
+import ComplaintsDashboard from './pages/admin/ComplaintsDashboard';
 import DemandForecastDashboard from './pages/admin/DemandForecastDashboard';
 
 const queryClient = new QueryClient();
@@ -144,6 +148,24 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['student']}>
                         <JourneyLogs />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Complaint Module — Student */}
+            <Route
+                path="/student/raise-complaint"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <RaiseComplaint />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/student/my-complaints"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <MyComplaints />
                     </ProtectedRoute>
                 }
             />
@@ -259,6 +281,7 @@ function AppRoutes() {
                 <Route path="/admin/routes" element={<RouteManagement />} />
                 <Route path="/admin/students/:id" element={<StudentDetailView />} />
                 <Route path="/admin/journey-summary" element={<DailyJourneySummary />} />
+                <Route path="/admin/student-journey" element={<StudentJourneyLogs />} />
                 <Route path="/admin/one-day-tickets" element={<DailyTickets />} />
 
                 {/* Lost Found Module */}
@@ -268,6 +291,9 @@ function AppRoutes() {
 
                 {/* Demand Forecast Module */}
                 <Route path="/admin/demand-forecast" element={<DemandForecastDashboard />} />
+
+                {/* Complaints Module */}
+                <Route path="/admin/complaints" element={<ComplaintsDashboard />} />
 
                 <Route path="/admin/settings" element={<div>Settings Component</div>} />
             </Route>
