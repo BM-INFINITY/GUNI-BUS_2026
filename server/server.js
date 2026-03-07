@@ -32,22 +32,9 @@ const io = socketIo(server, {
 app.set("io", io);
 
 // Middleware
+/* app.use(cors({ origin: '*' }));*/
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Expo Go, curl, Postman)
-        if (!origin) return callback(null, true);
-        // Allow the web client URL
-        const allowed = [
-            process.env.CLIENT_URL,
-            'https://guni-bus-2026.onrender.com',
-        ].filter(Boolean);
-        if (allowed.includes(origin)) return callback(null, true);
-        // Allow any Expo Go / local dev origin
-        if (origin.startsWith('exp://') || origin.startsWith('http://localhost') || origin.startsWith('http://10.')) {
-            return callback(null, true);
-        }
-        return callback(null, true); // Permissive for mobile — tighten in production if needed
-    },
+    origin: process.env.CLIENT_URL,
     credentials: true
 }));
 app.use(express.json());
