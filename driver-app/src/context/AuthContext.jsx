@@ -38,12 +38,14 @@ export const AuthProvider = ({ children }) => {
 
   // ─── Login ─────────────────────────────────────────────────────────────────
   /**
-   * Calls POST /api/auth/driver/login, persists token + user,
-   * and updates context state — triggering instant navigation.
+   * Calls POST /api/auth/login (unified login endpoint) on the deployed backend.
+   * Uses `loginId` field which accepts both enrollment number and employee ID.
+   *
+   * Endpoint: https://guni-bus-2026.onrender.com/api/auth/login
    */
   const login = useCallback(async (employeeId, password) => {
-    const response = await api.post('/auth/driver/login', {
-      employeeId: employeeId.trim(),
+    const response = await api.post('/auth/login', {
+      loginId: employeeId.trim(), // server expects `loginId`, not `employeeId`
       password,
     });
 
