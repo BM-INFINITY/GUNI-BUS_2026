@@ -1,7 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 * {
     margin: 0;
     padding: 0;
@@ -33,7 +32,7 @@ body {
     align-items: center;
     min-height: 100vh;
     padding-bottom: 100px;
-    background-color: #20c997;
+    background-color: #4e4c63;
     /* background-image: url("/logo.png"); */
     background-size: cover;
     background-position: center;
@@ -1061,15 +1060,12 @@ button:disabled {
     .form-row {
         grid-template-columns: 1fr;
     }
-
     .applications-grid {
         grid-template-columns: 1fr;
     }
-
     .app-actions {
         grid-template-columns: 1fr;
     }
-
     .pass-item,
     .student-item {
         grid-template-columns: 1fr;
