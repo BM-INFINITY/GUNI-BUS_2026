@@ -1,0 +1,14 @@
+  --non-interactive is not supported, use $CI=1 instead
+Starting project at D:\Projects\Driver app\GUNI-BUS_2026\driver-app
+Starting Metro Bundler
+
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-native-async-storage/async-storage@3.0.1 - expected version: 2.2.0
+  react-native-reanimated@4.2.2 - expected version: 4.2.1
+  react-native-safe-area-context@5.7.0 - expected version: ~5.6.2
+  react-native-screens@4.24.0 - expected version: ~4.23.0
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+
+D:\Projects\Driver app\GUNI-BUS_2026\driver-app>

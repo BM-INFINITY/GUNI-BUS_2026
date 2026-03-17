@@ -24,7 +24,9 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "permissions": ["android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,7 +37,9 @@
         {
           "cameraPermission": "Allow GUNI Bus Driver to access camera to scan student QR codes."
         }
-      ]
+      ],
+      "expo-asset",
+      "expo-font"
     ]
   }
 }

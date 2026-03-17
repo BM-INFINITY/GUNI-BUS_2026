@@ -7,6 +7,8 @@ import {
   ScrollView,
   Animated,
   Vibration,
+  Switch,
+  TextInput,
 } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 import { COLORS } from '../utils/constants';
@@ -27,6 +29,11 @@ const ScanQRCodeScreen = ({ navigation }) => {
   const [scanResult, setScanResult] = useState(null); // null = no result yet
   const [scanError, setScanError] = useState('');
   const [showResult, setShowResult] = useState(false);
+
+  // ── DEV ONLY: Mock time state ──────────────────────────────────────────────
+  const [mockEnabled, setMockEnabled] = useState(false);
+  const [mockTime, setMockTime] = useState('');       // format: YYYY-MM-DDTHH:mm
+  const [showMockPanel, setShowMockPanel] = useState(false);
 
   // Cooldown: track the timestamp of the last scan
   const lastScanTimeRef = useRef(0);
@@ -86,8 +93,19 @@ const ScanQRCodeScreen = ({ navigation }) => {
       setScanError('');
 
       try {
-        // POST /api/driver/scan  { qrData: <scanned string> }
-        const result = await scanQR(data);
+        // POST /api/driver/scan  { qrData: "GUNI|passId|userId|validUntil|signature" }
+        // scanQR() trims whitespace before sending — raw data is NOT modified otherwise
+
+        // DEV ONLY: build ISO mockTime when enabled and input is non-empty
+        let mockTimeISO = null;
+        if (mockEnabled && mockTime.trim()) {
+          const parsed = new Date(mockTime.trim());
+          if (!isNaN(parsed.getTime())) {
+            mockTimeISO = parsed.toISOString();
+          }
+        }
+
+        const result = await scanQR(data, mockTimeISO);
         setScanResult(result);
         Vibration.vibrate(100); // Short success haptic
       } catch (err) {
@@ -183,6 +201,55 @@ const ScanQRCodeScreen = ({ navigation }) => {
               <Text style={styles.cooldownNote}>
                 {SCAN_COOLDOWN_MS / 1000}s cooldown between scans
               </Text>
+
+              {/* ── DEV ONLY: Mock Time Panel ───────────────────────────── */}
+              <TouchableOpacity
+                style={styles.devPanelToggle}
+                onPress={() => setShowMockPanel(p => !p)}
+                accessibilityLabel="Toggle mock time panel"
+              >
+                <Text style={styles.devPanelToggleText}>
+                  🧪 DEV ONLY – Mock Scan Time {showMockPanel ? '▲' : '▼'}
+                </Text>
+              </TouchableOpacity>
+
+              {showMockPanel && (
+                <View style={styles.devPanel}>
+                  {/* Enable toggle */}
+                  <View style={styles.devRow}>
+                    <Text style={styles.devLabel}>Enable Mock Time</Text>
+                    <Switch
+                      value={mockEnabled}
+                      onValueChange={setMockEnabled}
+                      thumbColor={mockEnabled ? '#facc15' : '#6b7280'}
+                      trackColor={{ false: '#374151', true: '#78350f' }}
+                    />
+                  </View>
+
+                  {/* Datetime input */}
+                  <TextInput
+                    style={[
+                      styles.devInput,
+                      !mockEnabled && styles.devInputDisabled,
+                    ]}
+                    value={mockTime}
+                    onChangeText={setMockTime}
+                    placeholder="YYYY-MM-DDTHH:mm"
+                    placeholderTextColor="#6b7280"
+                    editable={mockEnabled}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+
+                  {/* Active indicator */}
+                  <Text style={styles.devStatus}>
+                    {mockEnabled && mockTime.trim()
+                      ? `⏰ Mocking: ${mockTime.trim()}`
+                      : '🕐 Using real server time'}
+                  </Text>
+                </View>
+              )}
+              {/* ── END DEV PANEL ───────────────────────────────────────── */}
             </View>
           </View>
         </View>
@@ -303,6 +370,64 @@ const PermissionMessage = ({ icon, title, text, onBack }) => (
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
+
+  // ── DEV Mock Time Panel ──────────────────────────────────────────────────────
+  devPanelToggle: {
+    marginTop: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: 'rgba(251,191,36,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.4)',
+  },
+  devPanelToggleText: {
+    color: '#fbbf24',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  devPanel: {
+    marginTop: 8,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.35)',
+    padding: 12,
+    width: 260,
+    gap: 8,
+  },
+  devRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  devLabel: {
+    color: '#d1d5db',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  devInput: {
+    backgroundColor: '#1f2937',
+    color: '#f9fafb',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#fbbf24',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  devInputDisabled: {
+    opacity: 0.35,
+    borderColor: '#4b5563',
+  },
+  devStatus: {
+    color: '#9ca3af',
+    fontSize: 10,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
 
   // ── Camera ──────────────────────────────────────────────────────────────────
   cameraWrapper: { flex: 1 },
