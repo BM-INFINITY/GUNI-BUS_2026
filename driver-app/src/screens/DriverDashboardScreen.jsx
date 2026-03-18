@@ -33,7 +33,6 @@ const PHASE_LABELS = {
 };
 
 const DriverDashboardScreen = ({ navigation }) => {
-  const { logout } = useAuth();
   const [dashboard, setDashboard] = useState(null);
   const [checkpoint, setCheckpoint] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -96,17 +95,6 @@ const DriverDashboardScreen = ({ navigation }) => {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => logout(), // clears AsyncStorage + updates auth state instantly
-      },
-    ]);
-  };
-
   if (loading) return <LoadingSpinner message="Loading dashboard..." />;
   if (error) return <ErrorMessage message={error} onRetry={fetchData} />;
 
@@ -120,16 +108,9 @@ const DriverDashboardScreen = ({ navigation }) => {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Good day 👋</Text>
-          <Text style={styles.driverName}>{driver?.name || 'Driver'}</Text>
-          <Text style={styles.employeeId}>ID: {driver?.employeeId}</Text>
-        </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+      {/* ── Dashboard Content ── */}
+      <View style={{ paddingTop: 60, paddingHorizontal: 20 }}>
+        <Text style={styles.dashboardTitle}>Overview</Text>
       </View>
 
       {/* Phase Status Card */}
@@ -272,47 +253,50 @@ const ActionButton = ({ label, icon, onPress, disabled, highlight }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+  dashboardTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#333333',
+    marginBottom: 4,
   },
-  greeting: { color: COLORS.textSecondary, fontSize: 13 },
-  driverName: { color: COLORS.text, fontSize: 20, fontWeight: '700', marginTop: 2 },
-  employeeId: { color: COLORS.textSecondary, fontSize: 12 },
-  logoutBtn: { backgroundColor: COLORS.errorBg, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: COLORS.danger },
-  logoutText: { color: COLORS.danger, fontWeight: '600', fontSize: 13 },
+  
   phaseCard: {
     margin: 16,
     backgroundColor: COLORS.surface,
     borderRadius: 16,
-    padding: 18,
-    borderWidth: 2,
+    padding: 20,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  phaseIcon: { fontSize: 32 },
+  phaseIcon: { fontSize: 36 },
   phaseInfo: { flex: 1 },
-  phaseLabel: { color: COLORS.textSecondary, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.8 },
-  phaseValue: { fontSize: 20, fontWeight: '700', marginTop: 2 },
-  phaseCount: { alignItems: 'center' },
-  phaseCountNum: { color: COLORS.text, fontSize: 24, fontWeight: '800' },
-  phaseCountLabel: { color: COLORS.textSecondary, fontSize: 11 },
-  statsRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginBottom: 8 },
+  phaseLabel: { color: COLORS.textSecondary, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+  phaseValue: { fontSize: 22, fontWeight: '800', marginTop: 4 },
+  phaseCount: { alignItems: 'center', backgroundColor: COLORS.surfaceLight, padding: 10, borderRadius: 12 },
+  phaseCountNum: { color: COLORS.primary, fontSize: 24, fontWeight: '900' },
+  phaseCountLabel: { color: COLORS.textSecondary, fontSize: 12, fontWeight: '600' },
+  
+  statsRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 16 },
   statCard: {
     flex: 1,
     backgroundColor: COLORS.surface,
     borderRadius: 14,
-    padding: 14,
+    padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   statIcon: { fontSize: 20, marginBottom: 6 },
   statValue: { color: COLORS.text, fontSize: 18, fontWeight: '700' },
@@ -326,13 +310,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.primary,
     borderRadius: 16,
-    padding: 18,
-    marginBottom: 12,
-    gap: 14,
+    padding: 20,
+    marginBottom: 16,
+    gap: 16,
     shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowRadius: 14,
+    elevation: 8,
   },
   scanQRCardDisabled: {
     backgroundColor: COLORS.surfaceLight,
@@ -350,21 +335,26 @@ const styles = StyleSheet.create({
   },
   scanQRArrowText: { color: COLORS.white, fontSize: 20, fontWeight: '700', lineHeight: 24 },
 
-  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   actionBtn: {
     width: '31%',
     backgroundColor: COLORS.surface,
     borderRadius: 14,
-    padding: 14,
+    padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  actionBtnDisabled: { opacity: 0.35 },
-  actionBtnHighlight: { borderColor: COLORS.primary, backgroundColor: '#1e3a5f' },
-  actionIcon: { fontSize: 24, marginBottom: 6 },
-  actionLabel: { color: COLORS.text, fontSize: 12, fontWeight: '600', textAlign: 'center' },
-  actionLabelDisabled: { color: COLORS.textSecondary },
+  actionBtnDisabled: { opacity: 0.4 },
+  actionBtnHighlight: { borderColor: COLORS.primary, backgroundColor: COLORS.surfaceLight },
+  actionIcon: { fontSize: 26, marginBottom: 8 },
+  actionLabel: { color: COLORS.text, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  actionLabelDisabled: { color: COLORS.textSecondary, fontWeight: '500' },
   modalOverlay: { flex: 1, backgroundColor: '#000000AA', justifyContent: 'flex-end' },
   modalCard: {
     backgroundColor: COLORS.surface,

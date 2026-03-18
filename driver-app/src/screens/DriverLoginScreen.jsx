@@ -61,20 +61,12 @@ const DriverLoginScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header / Logo ──────────────────────────────────────────────── */}
-        <View style={styles.header}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>🚌</Text>
-          </View>
-          <Text style={styles.appName}>GUNI BUS</Text>
-          <Text style={styles.subtitle}>Driver Portal</Text>
-        </View>
-
         {/* ── Login Card ─────────────────────────────────────────────────── */}
         <View style={styles.card}>
-          <Text style={styles.title}>Driver Login</Text>
+          <Text style={styles.appName}>University Bus System</Text>
+          <Text style={styles.title}>Login</Text>
           <Text style={styles.description}>
-            Sign in with your employee credentials
+            Login with your employee ID and password
           </Text>
 
           {/* Error banner */}
@@ -147,8 +139,6 @@ const DriverLoginScreen = () => {
             )}
           </TouchableOpacity>
         </View>
-
-        <Text style={styles.footer}>GUNI University Transportation System</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -156,116 +146,99 @@ const DriverLoginScreen = () => {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: COLORS.background },
+  flex: { 
+    flex: 1, 
+    // Teal background to match web .login-container
+    backgroundColor: COLORS.secondary, 
+  },
 
   container: {
     flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 24,
+    paddingBottom: 100, // Matching web bottom padding
   },
 
-  // Header
-  header: { alignItems: 'center', marginBottom: 32 },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
+  // Card (mimmicks .login-box)
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    padding: 32,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
     elevation: 10,
   },
-  logoText: { fontSize: 38 },
+
   appName: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: COLORS.text,
-    letterSpacing: 2,
+    fontSize: 26,
+    fontWeight: '700',
+    color: COLORS.primary, // Indigo
+    marginBottom: 8,
   },
-  subtitle: {
+  title: { 
+    color: '#333333', 
+    fontSize: 20, 
+    fontWeight: '600', 
+    marginBottom: 24,
+  },
+  description: { 
+    color: '#666666', 
+    fontSize: 14, 
+    marginBottom: 24 
+  },
+
+  // Error (.error-message)
+  errorBox: {
+    backgroundColor: '#ffeeee', // light red
+    borderRadius: 5,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: { color: '#cc3333', fontSize: 13, lineHeight: 18 },
+
+  // Labels (.form-group label)
+  label: {
+    color: '#333333',
     fontSize: 14,
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
+    fontWeight: '500',
+    marginBottom: 8,
     marginTop: 4,
   },
 
-  // Card
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  title: { color: COLORS.text, fontSize: 22, fontWeight: '700', marginBottom: 6 },
-  description: { color: COLORS.textSecondary, fontSize: 13, marginBottom: 20 },
-
-  // Error
-  errorBox: {
-    backgroundColor: COLORS.errorBg,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.danger,
-  },
-  errorText: { color: '#FCA5A5', fontSize: 13, lineHeight: 18 },
-
-  // Labels
-  label: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    marginTop: 14,
-  },
-
-  // Inputs
+  // Inputs (.form-group input)
   input: {
-    backgroundColor: COLORS.surfaceLight,
-    borderRadius: 12,
-    padding: 14,
-    color: COLORS.text,
-    fontSize: 15,
+    backgroundColor: COLORS.white,
+    borderRadius: 5,
+    padding: 12, // 0.75rem approx
+    color: '#333333',
+    fontSize: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#dddddd',
+    marginBottom: 16,
   },
   passwordRow: { position: 'relative' },
   passwordInput: { paddingRight: 52 },
   eyeBtn: { position: 'absolute', right: 14, top: 14 },
   eyeText: { fontSize: 18 },
 
-  // Button
+  // Button (.auth-button)
   loginBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
+    backgroundColor: COLORS.primary, // Indigo
+    borderRadius: 5,
+    paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 24,
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    marginTop: 8,
   },
-  loginBtnDisabled: { opacity: 0.6 },
+  loginBtnDisabled: { backgroundColor: '#cccccc' },
   loginBtnText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-
-  footer: {
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    fontSize: 12,
-    marginTop: 28,
+    fontWeight: '500',
   },
 });
 
