@@ -210,6 +210,16 @@ const DriverDashboardScreen = ({ navigation }) => {
             <Ionicons name="map-outline" size={26} color={COLORS.primary} />
             <Text style={[styles.actionLabel, styles.actionLabelActive]}>Route Info</Text>
           </TouchableOpacity>
+
+          {/* Lost & Found button */}
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionBtnActive, styles.actionBtnLostFound]}
+            onPress={() => navigation.navigate('ReportFoundItem')}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="bag-personal-outline" size={26} color={COLORS.warning} />
+            <Text style={[styles.actionLabel, styles.actionLabelActive]}>Lost Found</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Odometer Modal ── */}
@@ -379,6 +389,7 @@ const styles = StyleSheet.create({
   },
   actionLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textMuted, textAlign: 'center' },
   actionLabelActive: { color: COLORS.textPrimary },
+  actionBtnLostFound: { borderColor: COLORS.warningLight, backgroundColor: '#fffbeb' },
 
   // Odometer Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.55)', justifyContent: 'flex-end' },
