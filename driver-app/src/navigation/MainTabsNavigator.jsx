@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils/constants';
 
 import DriverDashboardScreen from '../screens/DriverDashboardScreen';
@@ -10,48 +11,46 @@ const Tab = createBottomTabNavigator();
 const MainTabsNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
           backgroundColor: COLORS.surface,
           borderTopColor: COLORS.border,
-          height: 60,
-          paddingBottom: 8,
+          borderTopWidth: 1,
+          height: 62,
+          paddingBottom: 10,
           paddingTop: 8,
         },
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textSecondary,
+        tabBarInactiveTintColor: COLORS.textMuted,
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
+          fontSize: 11,
+          fontWeight: '700',
+          letterSpacing: 0.3,
         },
-      }}
+        tabBarIcon: ({ color, focused }) => {
+          let iconName;
+          if (route.name === 'HomeTab') {
+            iconName = focused ? 'grid' : 'grid-outline';
+          } else if (route.name === 'ProfileTab') {
+            iconName = focused ? 'person-circle' : 'person-circle-outline';
+          }
+          return <Ionicons name={iconName} size={22} color={color} />;
+        },
+      })}
     >
       <Tab.Screen
         name="HomeTab"
         component={DriverDashboardScreen}
-        options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>🏠</Text>
-          ),
-        }}
+        options={{ tabBarLabel: 'Dashboard' }}
       />
       <Tab.Screen
         name="ProfileTab"
         component={DriverProfileScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 20, color }}>👤</Text>
-          ),
-        }}
+        options={{ tabBarLabel: 'Profile' }}
       />
     </Tab.Navigator>
   );
 };
-
-// Quick polyfill for Text used in icons
-import { Text } from 'react-native';
 
 export default MainTabsNavigator;

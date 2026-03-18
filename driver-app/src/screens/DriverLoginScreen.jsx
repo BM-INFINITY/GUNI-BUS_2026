@@ -9,8 +9,10 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  StatusBar,
 } from 'react-native';
-import { COLORS } from '../utils/constants';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, RADIUS, SHADOW } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
 
 const DriverLoginScreen = () => {
@@ -21,29 +23,18 @@ const DriverLoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
 
-  // Ref allows keyboard "next" to move focus directly to the password field
   const passwordRef = useRef(null);
 
   const handleLogin = async () => {
-    // ── Input validation ──────────────────────────────────────────────────
-    if (!employeeId.trim()) {
-      setError('Please enter your Employee ID.');
-      return;
-    }
-    if (!password) {
-      setError('Please enter your password.');
-      return;
-    }
+    if (!employeeId.trim()) { setError('Employee ID is required.'); return; }
+    if (!password)           { setError('Password is required.');    return; }
 
     setError('');
     setLoading(true);
-
     try {
-      // Calls POST /api/auth/driver/login via AuthContext.
-      // On success the context state updates instantly →
-      // AppNavigator switches to DriverNavigator without any polling delay.
-      await login(employeeId, password);
+      await login(employeeId.trim(), password);
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -52,194 +43,211 @@ const DriverLoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Login Card ─────────────────────────────────────────────────── */}
-        <View style={styles.card}>
-          <Text style={styles.appName}>University Bus System</Text>
-          <Text style={styles.title}>Login</Text>
-          <Text style={styles.description}>
-            Login with your employee ID and password
-          </Text>
-
-          {/* Error banner */}
-          {!!error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠️  {error}</Text>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Brand Header ─────────────────────────── */}
+          <View style={styles.brand}>
+            <View style={styles.logoBox}>
+              <Ionicons name="bus" size={36} color={COLORS.white} />
             </View>
-          )}
+            <Text style={styles.brandName}>GUNI BUS</Text>
+            <Text style={styles.brandSub}>Driver Portal</Text>
+          </View>
 
-          {/* Employee ID */}
-          <Text style={styles.label}>Employee ID</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. DRV001"
-            placeholderTextColor={COLORS.textSecondary}
-            value={employeeId}
-            onChangeText={(v) => {
-              setEmployeeId(v);
-              if (error) setError('');
-            }}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="next"
-            onSubmitEditing={() => passwordRef.current?.focus()}
-            blurOnSubmit={false}
-            editable={!loading}
-            testID="input-employee-id"
-          />
+          {/* ── Card ─────────────────────────────────── */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Sign In</Text>
+            <Text style={styles.cardSub}>Enter your employee credentials</Text>
 
-          {/* Password */}
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordRow}>
-            <TextInput
-              ref={passwordRef}
-              style={[styles.input, styles.passwordInput]}
-              placeholder="••••••••"
-              placeholderTextColor={COLORS.textSecondary}
-              value={password}
-              onChangeText={(v) => {
-                setPassword(v);
-                if (error) setError('');
-              }}
-              secureTextEntry={!showPassword}
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-              editable={!loading}
-              testID="input-password"
-            />
+            {/* Error */}
+            {!!error && (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={16} color={COLORS.danger} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            {/* Employee ID */}
+            <Text style={styles.label}>Employee ID</Text>
+            <View style={[styles.inputRow, focusedField === 'id' && styles.inputRowFocused]}>
+              <Ionicons name="id-card-outline" size={18} color={focusedField === 'id' ? COLORS.primary : COLORS.textSecondary} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. DRV001"
+                placeholderTextColor={COLORS.textMuted}
+                value={employeeId}
+                onChangeText={(v) => { setEmployeeId(v); if (error) setError(''); }}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
+                editable={!loading}
+                onFocus={() => setFocusedField('id')}
+                onBlur={() => setFocusedField(null)}
+                testID="input-employee-id"
+              />
+            </View>
+
+            {/* Password */}
+            <Text style={styles.label}>Password</Text>
+            <View style={[styles.inputRow, focusedField === 'pw' && styles.inputRowFocused]}>
+              <Ionicons name="lock-closed-outline" size={18} color={focusedField === 'pw' ? COLORS.primary : COLORS.textSecondary} />
+              <TextInput
+                ref={passwordRef}
+                style={[styles.input, { flex: 1 }]}
+                placeholder="••••••••"
+                placeholderTextColor={COLORS.textMuted}
+                value={password}
+                onChangeText={(v) => { setPassword(v); if (error) setError(''); }}
+                secureTextEntry={!showPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                editable={!loading}
+                onFocus={() => setFocusedField('pw')}
+                onBlur={() => setFocusedField(null)}
+                testID="input-password"
+              />
+              <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={COLORS.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Sign In Button */}
             <TouchableOpacity
-              style={styles.eyeBtn}
-              onPress={() => setShowPassword((v) => !v)}
-              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.85}
+              testID="btn-login"
             >
-              <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+              {loading
+                ? <ActivityIndicator color={COLORS.white} />
+                : <>
+                    <Ionicons name="log-in-outline" size={20} color={COLORS.white} />
+                    <Text style={styles.loginBtnText}>Sign In</Text>
+                  </>
+              }
             </TouchableOpacity>
           </View>
 
-          {/* Sign In button */}
-          <TouchableOpacity
-            style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.85}
-            testID="btn-login"
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.white} />
-            ) : (
-              <Text style={styles.loginBtnText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Text style={styles.footer}>GUNI University Transportation System</Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  flex: { 
-    flex: 1, 
-    // Teal background to match web .login-container
-    backgroundColor: COLORS.secondary, 
-  },
+  flex: { flex: 1, backgroundColor: COLORS.primary },
 
   container: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    paddingBottom: 100, // Matching web bottom padding
+    paddingBottom: 48,
   },
 
-  // Card (mimmicks .login-box)
+  // Brand
+  brand: { alignItems: 'center', marginBottom: 32 },
+  logoBox: {
+    width: 72,
+    height: 72,
+    borderRadius: RADIUS.lg,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  brandName: { fontSize: 28, fontWeight: '800', color: COLORS.white, letterSpacing: 2 },
+  brandSub: { fontSize: 13, color: 'rgba(255,255,255,0.75)', letterSpacing: 1, marginTop: 4, fontWeight: '500' },
+
+  // Card
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 10,
-    padding: 32,
+    borderRadius: RADIUS.xl,
+    padding: 28,
     width: '100%',
-    maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    maxWidth: 420,
+    ...SHADOW.card,
   },
+  cardTitle: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
+  cardSub: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 24 },
 
-  appName: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: COLORS.primary, // Indigo
-    marginBottom: 8,
-  },
-  title: { 
-    color: '#333333', 
-    fontSize: 20, 
-    fontWeight: '600', 
-    marginBottom: 24,
-  },
-  description: { 
-    color: '#666666', 
-    fontSize: 14, 
-    marginBottom: 24 
-  },
-
-  // Error (.error-message)
+  // Error
   errorBox: {
-    backgroundColor: '#ffeeee', // light red
-    borderRadius: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.dangerLight,
+    borderRadius: RADIUS.sm,
     padding: 12,
     marginBottom: 16,
   },
-  errorText: { color: '#cc3333', fontSize: 13, lineHeight: 18 },
+  errorText: { color: COLORS.danger, fontSize: 13, flex: 1, lineHeight: 18 },
 
-  // Labels (.form-group label)
+  // Label
   label: {
-    color: '#333333',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
     marginBottom: 8,
-    marginTop: 4,
+    marginTop: 16,
+    letterSpacing: 0.3,
   },
 
-  // Inputs (.form-group input)
-  input: {
-    backgroundColor: COLORS.white,
-    borderRadius: 5,
-    padding: 12, // 0.75rem approx
-    color: '#333333',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#dddddd',
-    marginBottom: 16,
-  },
-  passwordRow: { position: 'relative' },
-  passwordInput: { paddingRight: 52 },
-  eyeBtn: { position: 'absolute', right: 14, top: 14 },
-  eyeText: { fontSize: 18 },
-
-  // Button (.auth-button)
-  loginBtn: {
-    backgroundColor: COLORS.primary, // Indigo
-    borderRadius: 5,
-    paddingVertical: 14,
+  // Input row
+  inputRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    backgroundColor: COLORS.surfaceAlt,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
+    gap: 10,
   },
-  loginBtnDisabled: { backgroundColor: '#cccccc' },
-  loginBtnText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '500',
+  inputRowFocused: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
   },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+  },
+  eyeBtn: { padding: 2 },
+
+  // Button
+  loginBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.md,
+    paddingVertical: 15,
+    marginTop: 28,
+    ...SHADOW.elevated,
+  },
+  loginBtnDisabled: { opacity: 0.6 },
+  loginBtnText: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
+
+  footer: { color: 'rgba(255,255,255,0.5)', textAlign: 'center', fontSize: 12, marginTop: 32 },
 });
 
 export default DriverLoginScreen;

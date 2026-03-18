@@ -4,40 +4,75 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:
 // For physical devices, replace with your machine's local IP e.g. http://192.168.x.x:5001/api
 
 export const COLORS = {
-  // Premium Web App Palette
-  primary: '#667eea',       // Indigo (Primary buttons, headers)
-  primaryDark: '#5568d3',   // Darker Indigo (Hover/Active states)
-  secondary: '#20c997',     // Teal (Login background, accents)
-  
-  // Status Colors
-  success: '#28a745',
-  successBg: '#d4edda',
-  warning: '#ffc107',
-  danger: '#dc3545',
-  errorBg: '#fee2e2',
-  
-  // Neutral/Surfaces (Light Theme to match Web Forms)
-  background: '#f5f5f5',    // App background
-  surface: '#ffffff',       // Cards/Boxes
-  surfaceLight: '#f9f9f9',  // Light grey inputs/areas
-  
-  // Text
-  text: '#333333',          // Primary text
-  textSecondary: '#666666', // Secondary/Hints
-  border: '#dddddd',        // Input borders
-  
-  white: '#ffffff',
+  // Primary brand — deep navy indigo with teal accent
+  primary: '#4F46E5',       // Indigo-600 — buttons, active states, highlights
+  primaryLight: '#E0E7FF',  // Indigo-100 — backgrounds, badges
+  primaryDark: '#3730A3',   // Indigo-800 — pressed states, dark headers
+  accent: '#0EA5E9',        // Sky-500 — secondary highlights
+
+  // Status
+  success: '#16A34A',       // Green-600
+  successLight: '#DCFCE7',  // Green-100
+  warning: '#D97706',       // Amber-600
+  warningLight: '#FEF3C7',  // Amber-100
+  danger: '#DC2626',        // Red-600
+  dangerLight: '#FEE2E2',   // Red-100
+  info: '#0891B2',          // Cyan-600
+  infoLight: '#CFFAFE',     // Cyan-100
+
+  // Neutrals — used for surfaces and text
+  background: '#F8FAFC',    // Slate-50 — app background
+  surface: '#FFFFFF',       // Pure white cards
+  surfaceAlt: '#F1F5F9',    // Slate-100 — alternating rows, disabled areas
+  border: '#E2E8F0',        // Slate-200 — card borders, dividers
+
+  // Text — high contrast on light background
+  textPrimary: '#0F172A',   // Slate-900 — headings, important values
+  textSecondary: '#475569', // Slate-600 — labels, secondary info
+  textMuted: '#94A3B8',     // Slate-400 — hints, footer text
+  textOnPrimary: '#FFFFFF', // White — text on primary colored backgrounds
+
+  // Legacy aliases for backward compat
+  text: '#0F172A',
+  textSecondary2: '#475569',
+
+  white: '#FFFFFF',
   black: '#000000',
   transparent: 'transparent',
+
+  // "secondary" for login background (Teal from web)
+  secondary: '#0EA5E9',
 };
 
 export const FONTS = {
-  regular: 'System',
-  medium: 'System',
-  bold: 'System',
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+  extrabold: 800,
 };
 
-export const STORAGE_KEYS = {
-  AUTH_TOKEN: '@guni_bus_driver_token',
-  USER_DATA: '@guni_bus_driver_user',
+export const RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  round: 50,
+};
+
+export const SHADOW = {
+  card: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  elevated: {
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
+  },
 };

@@ -1,6 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { COLORS } from '../utils/constants';
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, Alert, StatusBar,
+} from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { COLORS, RADIUS, SHADOW } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
 
 const DriverProfileScreen = () => {
@@ -9,180 +13,143 @@ const DriverProfileScreen = () => {
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => logout(), // clears AsyncStorage + updates auth state instantly
-      },
+      { text: 'Logout', style: 'destructive', onPress: () => logout() },
     ]);
   };
 
   if (!user) return null;
 
+  const initial = user.name?.charAt(0)?.toUpperCase() || 'D';
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>{user.name?.charAt(0) || 'D'}</Text>
-        </View>
-        <Text style={styles.name}>{user.name || 'Driver'}</Text>
-        <Text style={styles.roleTitle}>GUNI Transit Driver</Text>
-      </View>
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Account Details</Text>
-        
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Employee ID</Text>
-          <Text style={styles.detailValue}>{user.employeeId}</Text>
-        </View>
-        
-        <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-          <Text style={styles.detailLabel}>Shift</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{user.shift?.toUpperCase() || 'N/A'}</Text>
+        {/* ── Avatar Header ── */}
+        <View style={styles.header}>
+          <View style={styles.avatarBox}>
+            <Text style={styles.avatarInitial}>{initial}</Text>
           </View>
+          <Text style={styles.name}>{user.name || 'Driver'}</Text>
+          <Text style={styles.role}>GUNI University — Driver</Text>
         </View>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Assigned Route & Bus</Text>
-        
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Route</Text>
-          <Text style={styles.detailValue}>{user.assignedRoute?.routeName || 'Unassigned'}</Text>
-        </View>
-        
-        <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-          <Text style={styles.detailLabel}>Bus Number</Text>
-          <Text style={styles.detailValue}>{user.assignedBus?.busNumber || 'Unassigned'}</Text>
-        </View>
-      </View>
+        {/* ── Account Card ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Account</Text>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
-        <Text style={styles.logoutBtnText}>Logout</Text>
-      </TouchableOpacity>
-      
-      <Text style={styles.footer}>App Version 1.0.0</Text>
-    </ScrollView>
+          <InfoRow icon="id-card-outline" label="Employee ID" value={user.employeeId} />
+          <InfoRow icon="time-outline"    label="Shift"       value={user.shift?.toUpperCase() || 'N/A'} isLast />
+        </View>
+
+        {/* ── Assignment Card ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Assignment</Text>
+
+          <InfoRow
+            icon="map-outline"
+            label="Route"
+            value={user.assignedRoute?.routeName || 'Unassigned'}
+          />
+          <InfoRow
+            icon="bus-outline"
+            label="Bus Number"
+            value={user.assignedBus?.busNumber || 'Unassigned'}
+            isLast
+          />
+        </View>
+
+        {/* ── Logout ── */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.version}>App v1.0.0</Text>
+      </ScrollView>
+    </>
   );
 };
 
+// ─── InfoRow ─────────────────────────────────────────────────────────────────
+const InfoRow = ({ icon, label, value, isLast }) => (
+  <View style={[styles.infoRow, isLast && styles.infoRowLast]}>
+    <View style={styles.infoIconBox}>
+      <Ionicons name={icon} size={18} color={COLORS.primary} />
+    </View>
+    <View style={styles.infoText}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  </View>
+);
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  content: {
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { padding: 20, paddingTop: 56, paddingBottom: 48 },
+
+  header: { alignItems: 'center', marginBottom: 28 },
+  avatarBox: {
+    width: 80, height: 80, borderRadius: 40,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 14,
+    ...SHADOW.elevated,
   },
-  avatarText: {
-    color: COLORS.white,
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 4,
-  },
-  roleTitle: {
-    fontSize: 14,
-    color: '#666666',
-    fontWeight: '500',
-  },
+  avatarInitial: { fontSize: 34, fontWeight: '800', color: COLORS.white },
+  name: { fontSize: 22, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
+  role: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500' },
+
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    marginBottom: 16,
+    ...SHADOW.card,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: COLORS.textMuted,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
     marginBottom: 16,
   },
-  detailRow: {
+
+  infoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
+    gap: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: COLORS.border,
   },
-  detailLabel: {
-    fontSize: 14,
-    color: '#666666',
-    fontWeight: '500',
+  infoRowLast: { borderBottomWidth: 0 },
+  infoIconBox: {
+    width: 36, height: 36, borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: 'center', alignItems: 'center',
   },
-  detailValue: {
-    fontSize: 14,
-    color: '#333333',
-    fontWeight: '600',
-    textAlign: 'right',
-    flex: 1,
-    marginLeft: 10,
-  },
-  badge: {
-    backgroundColor: '#e0e7ff', // light indigo
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  badgeText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
+  infoText: { flex: 1 },
+  infoLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '500', marginBottom: 2 },
+  infoValue: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+
   logoutBtn: {
-    backgroundColor: '#ffeeee',
-    borderWidth: 1,
-    borderColor: COLORS.danger,
-    borderRadius: 8,
-    paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: COLORS.dangerLight,
+    borderRadius: RADIUS.md,
+    paddingVertical: 15,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: COLORS.danger + '55',
   },
-  logoutBtnText: {
-    color: COLORS.danger,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    textAlign: 'center',
-    color: '#999999',
-    fontSize: 12,
-    marginTop: 30,
-  },
+  logoutText: { fontSize: 15, fontWeight: '700', color: COLORS.danger },
+  version: { textAlign: 'center', color: COLORS.textMuted, fontSize: 12, marginTop: 24 },
 });
 
 export default DriverProfileScreen;
