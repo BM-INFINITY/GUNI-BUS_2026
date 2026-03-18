@@ -1,26 +1,10 @@
 import axios from 'axios';
 import { getToken } from '../utils/storage';
-
-// ─── Base URL ───────────────────────────────────────────────────────────────
-// Set EXPO_PUBLIC_API_URL in your .env file.
-//   Android Emulator : http://10.0.2.2:5001/api
-//   iOS Simulator    : http://localhost:5001/api
-//   Physical device  : http://<your-local-IP>:5001/api
-//   Production       : https://your-api.com/api
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
-
-if (!BASE_URL) {
-  // Fail loudly during development rather than silently hitting the wrong server
-  console.error(
-    '[api.js] EXPO_PUBLIC_API_URL is not set.\n' +
-    'Create a .env file in driver-app/ and add:\n' +
-    '  EXPO_PUBLIC_API_URL=http://10.0.2.2:5001/api'
-  );
-}
+import { API_BASE_URL } from '../utils/constants';
 
 // ─── Axios Instance ─────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

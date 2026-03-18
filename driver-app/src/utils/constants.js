@@ -76,3 +76,8 @@ export const SHADOW = {
     elevation: 6,
   },
 };
+
+export const STORAGE_KEYS = {
+  AUTH_TOKEN: 'driver_auth_token',
+  USER_DATA: 'driver_user_data',
+};
