@@ -1,7 +1,7 @@
 // API Base URL — change this to your deployed server URL or local IP when testing on a physical device
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:5001/api';
-// Note: 10.0.2.2 is the Android Emulator's alias for localhost.
-// For physical devices, replace with your machine's local IP e.g. http://192.168.x.x:5001/api
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://guni-bus-2026.onrender.com/api';
+// Fallback guarantees production URL if .env is not present in Expo EAS cloud build
+// For local testing on emulator, you can use: http://10.0.2.2:5001/api
 
 export const COLORS = {
   // Primary brand — deep navy indigo with teal accent

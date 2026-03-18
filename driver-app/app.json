@@ -48,9 +48,14 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "872fff6f-a596-4d8c-a285-60ca607d24f8"
+        "projectId": "d2e84f56-f398-4090-bbf1-e9011bf8bf65"
       }
     },
-    "owner": "dhruv010s-organization"
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d2e84f56-f398-4090-bbf1-e9011bf8bf65"
+    }
   }
 }
