@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Alert, StatusBar,
@@ -8,7 +8,11 @@ import { COLORS, RADIUS, SHADOW } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
 
 const DriverProfileScreen = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [

@@ -22,6 +22,7 @@ import {
   startReturn,
   reachedHome,
 } from '../services/checkpointService';
+import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 
@@ -43,6 +44,7 @@ const TRIP_ACTIONS = [
 ];
 
 const DriverDashboardScreen = ({ navigation }) => {
+  const { updateUser } = useAuth();
   const [dashboard, setDashboard] = useState(null);
   const [checkpoint, setCheckpoint] = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -60,6 +62,9 @@ const DriverDashboardScreen = ({ navigation }) => {
       const [dash, cp] = await Promise.all([getDashboard(), getCheckpointStatus()]);
       setDashboard(dash);
       setCheckpoint(cp);
+      if (dash.driver) {
+        updateUser(dash.driver);
+      }
     } catch (err) {
       setError(err.message);
     } finally {

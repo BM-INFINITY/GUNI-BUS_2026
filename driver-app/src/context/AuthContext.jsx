@@ -76,12 +76,35 @@ export const AuthProvider = ({ children }) => {
     setUser(null); // triggers immediate re-render to Auth stack
   }, []);
 
+  // ─── Refresh User Data ───────────────────────────────────────────────────
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await api.get('/driver/dashboard');
+      if (response.data.driver) {
+        await setUserData(response.data.driver);
+        setUser(response.data.driver);
+      }
+    } catch (err) {
+      console.error('[AuthContext] refreshUser failed:', err);
+    }
+  }, []);
+
+  // ─── Manual Update ───────────────────────────────────────────────────────
+  const updateUser = useCallback(async (newData) => {
+    if (newData) {
+      await setUserData(newData);
+      setUser(newData);
+    }
+  }, []);
+
   const value = {
     user,
     isAuthenticated: !!user,
     isLoading,
     login,
     logout,
+    refreshUser,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
