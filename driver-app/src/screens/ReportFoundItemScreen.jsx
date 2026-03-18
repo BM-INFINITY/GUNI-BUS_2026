@@ -66,7 +66,7 @@ const ReportFoundItemScreen = ({ navigation }) => {
           text: 'Take Photo',
           onPress: async () => {
             const result = await ImagePicker.launchCameraAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              mediaTypes: ImagePicker.MediaType.Images,
               quality: 0.5,
               base64: true,
             });
@@ -81,7 +81,7 @@ const ReportFoundItemScreen = ({ navigation }) => {
           text: 'Choose from Gallery',
           onPress: async () => {
             const result = await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              mediaTypes: ImagePicker.MediaType.Images,
               quality: 0.5,
               base64: true,
             });
