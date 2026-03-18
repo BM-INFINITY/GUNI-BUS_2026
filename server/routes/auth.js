@@ -19,7 +19,7 @@ router.post('/login', async (req, res) => {
                 { enrollmentNumber: { $regex: new RegExp(`^${loginId}$`, 'i') } },
                 { employeeId: { $regex: new RegExp(`^${loginId}$`, 'i') } }
             ]
-        });
+        }).populate('assignedRoute').populate('assignedBus');
 
         console.log('Login Attempt:', { loginId, userFound: !!user });
 
@@ -98,7 +98,9 @@ router.post('/driver/login', async (req, res) => {
         const { employeeId, password } = req.body;
 
         // Find driver by employeeId
-        const driver = await User.findOne({ employeeId, role: 'driver' });
+        const driver = await User.findOne({ employeeId, role: 'driver' })
+            .populate('assignedRoute')
+            .populate('assignedBus');
 
         if (!driver) {
             return res.status(400).json({ message: 'Invalid credentials' });
