@@ -81,31 +81,46 @@ const RouteDetailsScreen = ({ navigation }) => {
         </View>
 
         {/* ── Info Grid ── */}
-        <View style={styles.infoGrid}>
-          <InfoTile icon="time-outline"    label="Shift"      value={route.shift?.toUpperCase() || '—'} />
-          <InfoTile icon="people-outline"  label="Capacity"   value={route.capacity ? `${route.capacity} seats` : '—'} />
-          <InfoTile icon="location-outline"label="Stops"      value={route.stops?.length ? `${route.stops.length} stops` : '—'} />
-          <InfoTile icon="radio-button-on" label="Status"     value={route.status || 'Active'} />
-        </View>
+        {(() => {
+          // The Route model stores shifts as an array: route.shifts[].shiftType & .stops
+          const shifts = route.shifts || [];
+          const shiftLabels = shifts.map(s => s.shiftType?.charAt(0).toUpperCase() + s.shiftType?.slice(1)).join(' & ') || '—';
+          const totalStops = shifts.reduce((sum, s) => sum + (s.stops?.length || 0), 0);
+          return (
+            <View style={styles.infoGrid}>
+              <InfoTile icon="time-outline"     label="Shifts"    value={shiftLabels} />
+              <InfoTile icon="location-outline" label="Stops"     value={totalStops ? `${totalStops} stops` : '—'} />
+              <InfoTile icon="radio-button-on"  label="Status"    value={route.isActive ? 'Active' : 'Inactive'} />
+              <InfoTile icon="cash-outline"     label="Semester"  value={route.semesterCharge ? `₹${route.semesterCharge}` : '—'} />
+            </View>
+          );
+        })()}
 
-        {/* ── Stops List ── */}
-        {route.stops?.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Stops</Text>
-            {route.stops.map((stop, idx) => (
-              <View key={idx} style={styles.stopCard}>
-                <View style={styles.stopIndex}>
-                  <Text style={styles.stopIndexText}>{idx + 1}</Text>
-                </View>
-                <View style={styles.stopInfo}>
-                  <Text style={styles.stopName}>{stop.name || stop.stopName || `Stop ${idx + 1}`}</Text>
-                  {stop.time && <Text style={styles.stopTime}>{stop.time}</Text>}
-                </View>
-                <Ionicons name="location-outline" size={16} color={COLORS.textMuted} />
+        {/* ── Stops List (per shift) ── */}
+        {(route.shifts || []).map((shift, sIdx) => (
+          shift.stops?.length > 0 && (
+            <View key={sIdx} style={styles.section}>
+              <View style={styles.shiftHeader}>
+                <Ionicons name="time-outline" size={16} color={COLORS.primary} />
+                <Text style={styles.sectionTitle}>
+                  {shift.shiftType?.charAt(0).toUpperCase() + shift.shiftType?.slice(1)} Shift Stops
+                </Text>
               </View>
-            ))}
-          </View>
-        )}
+              {shift.stops.map((stop, idx) => (
+                <View key={idx} style={styles.stopCard}>
+                  <View style={styles.stopIndex}>
+                    <Text style={styles.stopIndexText}>{idx + 1}</Text>
+                  </View>
+                  <View style={styles.stopInfo}>
+                    <Text style={styles.stopName}>{stop.name || `Stop ${idx + 1}`}</Text>
+                    {stop.arrivalTime && <Text style={styles.stopTime}>{stop.arrivalTime}</Text>}
+                  </View>
+                  <Ionicons name="location-outline" size={16} color={COLORS.textMuted} />
+                </View>
+              ))}
+            </View>
+          )
+        ))}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -181,7 +196,8 @@ const styles = StyleSheet.create({
   tileValue: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
 
   section: { padding: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 12 },
+  shiftHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
   stopCard: {
     flexDirection: 'row',
     alignItems: 'center',
