@@ -8,6 +8,7 @@ import {
   Animated,
   Vibration,
   Switch,
+  Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CameraView, Camera } from 'expo-camera';
@@ -34,6 +35,10 @@ const ScanQRCodeScreen = ({ navigation }) => {
   const [mockEnabled, setMockEnabled] = useState(false);
   const [mockDate, setMockDate] = useState(new Date()); // Native date object for picker
   const [showMockPanel, setShowMockPanel] = useState(false);
+  
+  // For Android DatePicker dialog modal visibility
+  const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+  const [androidPickerMode, setAndroidPickerMode] = useState('date'); // 'date' or 'time'
 
   // Cooldown: track the timestamp of the last scan
   const lastScanTimeRef = useRef(0);
@@ -226,26 +231,54 @@ const ScanQRCodeScreen = ({ navigation }) => {
                   {/* Datetime picker */}
                   {mockEnabled && (
                     <View style={styles.devPickerContainer}>
-                       <Text style={styles.devLabel}>Time:</Text>
-                       <DateTimePicker
-                         value={mockDate}
-                         mode="time"
-                         display="default"
-                         onChange={(event, selectedDate) => {
-                           if (selectedDate) setMockDate(selectedDate);
-                         }}
-                         themeVariant="dark" // good for the dark overlay
-                       />
-                       <Text style={styles.devLabel}>Date:</Text>
-                       <DateTimePicker
-                         value={mockDate}
-                         mode="date"
-                         display="default"
-                         onChange={(event, selectedDate) => {
-                           if (selectedDate) setMockDate(selectedDate);
-                         }}
-                         themeVariant="dark"
-                       />
+                      {Platform.OS === 'android' ? (
+                        <>
+                          <TouchableOpacity 
+                             style={styles.androidPickerBtn} 
+                             onPress={() => { setAndroidPickerMode('time'); setShowAndroidPicker(true); }}>
+                            <Text style={styles.androidPickerBtnText}>Set Time</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity 
+                             style={styles.androidPickerBtn} 
+                             onPress={() => { setAndroidPickerMode('date'); setShowAndroidPicker(true); }}>
+                            <Text style={styles.androidPickerBtnText}>Set Date</Text>
+                          </TouchableOpacity>
+                          {showAndroidPicker && (
+                            <DateTimePicker
+                              value={mockDate}
+                              mode={androidPickerMode}
+                              display="default"
+                              onChange={(event, selectedDate) => {
+                                setShowAndroidPicker(false);
+                                if (selectedDate) setMockDate(selectedDate);
+                              }}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Text style={styles.devLabel}>Time:</Text>
+                          <DateTimePicker
+                            value={mockDate}
+                            mode="time"
+                            display="default"
+                            onChange={(event, selectedDate) => {
+                              if (selectedDate) setMockDate(selectedDate);
+                            }}
+                            themeVariant="dark" // good for the dark overlay
+                          />
+                          <Text style={styles.devLabel}>Date:</Text>
+                          <DateTimePicker
+                            value={mockDate}
+                            mode="date"
+                            display="default"
+                            onChange={(event, selectedDate) => {
+                              if (selectedDate) setMockDate(selectedDate);
+                            }}
+                            themeVariant="dark"
+                          />
+                        </>
+                      )}
                     </View>
                   )}
 
@@ -423,6 +456,19 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     marginTop: 4,
+  },
+  androidPickerBtn: {
+    backgroundColor: '#374151',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#4b5563',
+  },
+  androidPickerBtnText: {
+    color: '#e5e7eb',
+    fontSize: 12,
+    fontWeight: '600',
   },
   devStatus: {
     color: '#9ca3af',
