@@ -8,8 +8,8 @@ import {
   Animated,
   Vibration,
   Switch,
-  TextInput,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { CameraView, Camera } from 'expo-camera';
 import { COLORS } from '../utils/constants';
 import { scanQR } from '../services/scanService';
@@ -32,7 +32,7 @@ const ScanQRCodeScreen = ({ navigation }) => {
 
   // ── DEV ONLY: Mock time state ──────────────────────────────────────────────
   const [mockEnabled, setMockEnabled] = useState(false);
-  const [mockTime, setMockTime] = useState('');       // format: YYYY-MM-DDTHH:mm
+  const [mockDate, setMockDate] = useState(new Date()); // Native date object for picker
   const [showMockPanel, setShowMockPanel] = useState(false);
 
   // Cooldown: track the timestamp of the last scan
@@ -96,13 +96,10 @@ const ScanQRCodeScreen = ({ navigation }) => {
         // POST /api/driver/scan  { qrData: "GUNI|passId|userId|validUntil|signature" }
         // scanQR() trims whitespace before sending — raw data is NOT modified otherwise
 
-        // DEV ONLY: build ISO mockTime when enabled and input is non-empty
+        // DEV ONLY: build ISO mockTime when enabled
         let mockTimeISO = null;
-        if (mockEnabled && mockTime.trim()) {
-          const parsed = new Date(mockTime.trim());
-          if (!isNaN(parsed.getTime())) {
-            mockTimeISO = parsed.toISOString();
-          }
+        if (mockEnabled) {
+          mockTimeISO = mockDate.toISOString();
         }
 
         const result = await scanQR(data, mockTimeISO);
@@ -226,25 +223,36 @@ const ScanQRCodeScreen = ({ navigation }) => {
                     />
                   </View>
 
-                  {/* Datetime input */}
-                  <TextInput
-                    style={[
-                      styles.devInput,
-                      !mockEnabled && styles.devInputDisabled,
-                    ]}
-                    value={mockTime}
-                    onChangeText={setMockTime}
-                    placeholder="YYYY-MM-DDTHH:mm"
-                    placeholderTextColor="#6b7280"
-                    editable={mockEnabled}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
+                  {/* Datetime picker */}
+                  {mockEnabled && (
+                    <View style={styles.devPickerContainer}>
+                       <Text style={styles.devLabel}>Time:</Text>
+                       <DateTimePicker
+                         value={mockDate}
+                         mode="time"
+                         display="default"
+                         onChange={(event, selectedDate) => {
+                           if (selectedDate) setMockDate(selectedDate);
+                         }}
+                         themeVariant="dark" // good for the dark overlay
+                       />
+                       <Text style={styles.devLabel}>Date:</Text>
+                       <DateTimePicker
+                         value={mockDate}
+                         mode="date"
+                         display="default"
+                         onChange={(event, selectedDate) => {
+                           if (selectedDate) setMockDate(selectedDate);
+                         }}
+                         themeVariant="dark"
+                       />
+                    </View>
+                  )}
 
                   {/* Active indicator */}
                   <Text style={styles.devStatus}>
-                    {mockEnabled && mockTime.trim()
-                      ? `⏰ Mocking: ${mockTime.trim()}`
+                    {mockEnabled
+                      ? `⏰ Mocking: ${mockDate.toLocaleString('en-IN')}`
                       : '🕐 Using real server time'}
                   </Text>
                 </View>
@@ -407,20 +415,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  devInput: {
+  devPickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#1f2937',
-    color: '#f9fafb',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#fbbf24',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
-  devInputDisabled: {
-    opacity: 0.35,
-    borderColor: '#4b5563',
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 4,
   },
   devStatus: {
     color: '#9ca3af',
