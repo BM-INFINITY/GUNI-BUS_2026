@@ -138,7 +138,11 @@ export const admin = {
 
     // Ticket Management
     getAllTickets: (params) => api.get('/admin/tickets/all', { params }),
-    getTicketsReport: () => api.get('/admin/tickets/all') // Use this for summary stats
+    getTicketsReport: () => api.get('/admin/tickets/all'), // Use this for summary stats
+
+    // Seat Reservation Config
+    updateBusSeatConfig: (id, data) => api.put(`/admin/buses/${id}/seat-config`, data),
+    getSeatReservations: (params) => api.get('/seat-reservation/admin/all', { params }),
 };
 
 // Driver
@@ -204,6 +208,16 @@ export const complaints = {
     getById: (id) => api.get(`/complaints/admin/${id}`),
     updateStatus: (id, data) => api.put(`/complaints/admin/${id}/status`, data),
     sendAdminMessage: (id, text) => api.post(`/complaints/admin/${id}/message`, { text }),
+};
+
+// Seat Reservation
+export const seatReservation = {
+    getAvailableBuses: () => api.get('/seat-reservation/available-buses'),
+    getSeatMap: (busId, date, routeId, direction = 'home_to_uni') =>
+        api.get(`/seat-reservation/seat-map/${busId}/${date}/${routeId}?direction=${direction}`),
+    book: (data) => api.post('/seat-reservation', data),
+    getMy: () => api.get('/seat-reservation/my'),
+    cancel: (id) => api.delete(`/seat-reservation/${id}`),
 };
 
 export default api;

@@ -11,8 +11,8 @@ const moment = require('moment-timezone');
 const getCurrentTime = (req) => {
     console.log('[TimeProvider] Request Body:', req?.body);
 
-    // In development: honour mockTime from scan request body
-    if (process.env.NODE_ENV !== 'production') {
+    // Allow mock time in development OR if explicitly requested via TIME_MODE
+    if (process.env.NODE_ENV !== 'production' || process.env.TIME_MODE === 'MOCK') {
         if (req?.body?.mockTime) {
             const mock = moment(req.body.mockTime);
             if (mock.isValid()) {

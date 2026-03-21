@@ -16,7 +16,8 @@ import {
     Gift,
     TrendingUp,
     AlertTriangle,
-    MessageCircle
+    MessageCircle,
+    Armchair
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -59,6 +60,8 @@ const StudentLayout = ({ children }) => {
         { icon: QrCode, label: 'My Day Tickets', path: '/student/my-day-tickets' },
         { icon: Search, label: 'Lost & Found', path: '/student/lost-and-found' },
         { icon: TrendingUp, label: 'Ride Intent & Rewards', path: '/student/ride-intent' },
+        { icon: Armchair, label: 'Reserve a Seat', path: '/student/seat-reservation' },
+        { icon: Armchair, label: 'My Reservations', path: '/student/my-reservations' },
         { icon: AlertTriangle, label: 'Raise Complaint', path: '/student/raise-complaint' },
         { icon: MessageCircle, label: 'My Complaints', path: '/student/my-complaints' },
     ];

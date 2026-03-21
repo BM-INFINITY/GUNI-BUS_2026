@@ -515,7 +515,11 @@ router.post('/buses', auth, isAdmin, async (req, res) => {
             insuranceExpiryDate,
             fitnessExpiryDate,
             assignedDriver,
-            assignedRoute
+            assignedRoute,
+            busType,
+            seatReservationEnabled,
+            pointCostPerSeat,
+            allowedRoutes
         } = req.body;
 
         const newBus = new Bus({
@@ -529,6 +533,10 @@ router.post('/buses', auth, isAdmin, async (req, res) => {
             fitnessExpiryDate,
             assignedDriver: assignedDriver || null,
             assignedRoute: assignedRoute || null,
+            busType: busType || 'standard',
+            seatReservationEnabled: seatReservationEnabled || false,
+            pointCostPerSeat: pointCostPerSeat || 50,
+            allowedRoutes: allowedRoutes || [],
             createdBy: req.user._id
         });
 
@@ -547,6 +555,7 @@ router.get('/buses', auth, isAdmin, async (req, res) => {
         const buses = await Bus.find()
             .populate('assignedDriver', 'name mobile')
             .populate('assignedRoute', 'routeName routeNumber')
+            .populate('allowedRoutes', 'routeName routeNumber')
             .sort({ createdAt: -1 });
         res.json(buses);
     } catch (error) {
@@ -586,6 +595,33 @@ router.delete('/buses/:id', auth, isAdmin, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+// Configure seat reservation for a bus
+router.put('/buses/:id/seat-config', auth, isAdmin, async (req, res) => {
+    try {
+        const { busType, seatReservationEnabled, pointCostPerSeat, allowedRoutes } = req.body;
+
+        const bus = await Bus.findById(req.params.id);
+        if (!bus) return res.status(404).json({ message: 'Bus not found' });
+
+        if (busType !== undefined) bus.busType = busType;
+        if (seatReservationEnabled !== undefined) bus.seatReservationEnabled = seatReservationEnabled;
+        if (pointCostPerSeat !== undefined) bus.pointCostPerSeat = pointCostPerSeat;
+        if (allowedRoutes !== undefined) bus.allowedRoutes = allowedRoutes;
+
+        await bus.save();
+
+        const updated = await Bus.findById(bus._id)
+            .populate('assignedRoute', 'routeName routeNumber')
+            .populate('allowedRoutes', 'routeName routeNumber');
+
+        res.json({ message: 'Seat reservation config updated.', bus: updated });
+    } catch (error) {
+        console.error('Seat config update error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 // ===============================
 // Driver Management

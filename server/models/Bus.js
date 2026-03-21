@@ -48,11 +48,33 @@ const busSchema = new mongoose.Schema({
         default: 'active'
     },
 
+    busType: {
+        type: String,
+        enum: ['standard'],
+        default: 'standard'
+    },
+
+    seatReservationEnabled: {
+        type: Boolean,
+        default: false
+    },
+
+    pointCostPerSeat: {
+        type: Number,
+        default: 50,
+        min: 1
+    },
+
     assignedRoute: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Route',
         default: null
     },
+
+    allowedRoutes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Route'
+    }],
 
     assignedDriver: {
         type: mongoose.Schema.Types.ObjectId,

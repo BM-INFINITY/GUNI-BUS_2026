@@ -23,7 +23,8 @@ import {
     TrendingUp,
     BookOpen,
     TicketPlus,
-    MessageSquare
+    MessageSquare,
+    Armchair
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/admin.css';
@@ -57,6 +58,7 @@ const AdminLayout = () => {
         { icon: PackageSearch, label: 'Lost & Found', path: '/admin/lost-found' },
         { icon: TrendingUp, label: 'Demand Forecast', path: '/admin/demand-forecast' },
         { icon: MessageSquare, label: 'Complaints', path: '/admin/complaints' },
+        { icon: Armchair, label: 'Seat Reservations', path: '/admin/seat-reservations' },
     ];
 
     const SidebarContent = () => (
