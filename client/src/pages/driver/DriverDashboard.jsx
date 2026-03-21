@@ -140,6 +140,14 @@ export default function DriverDashboard() {
             </div>
           </button>
 
+          <button className="action-card info" onClick={() => navigate("/driver/seats")} style={{ backgroundColor: '#e0f2fe', color: '#0369a1', borderColor: '#bae6fd' }}>
+            <div className="icon-wrapper">💺</div>
+            <div className="action-text">
+              <h3>Live Seats</h3>
+              <p>View Reserved Status</p>
+            </div>
+          </button>
+
           <button className="action-card secondary" onClick={() => navigate("/driver/report-found")}>
             <div className="icon-wrapper">🎒</div>
             <div className="action-text">

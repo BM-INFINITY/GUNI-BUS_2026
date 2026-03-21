@@ -5,6 +5,7 @@ import { COLORS } from '../utils/constants';
 
 import DriverDashboardScreen from '../screens/DriverDashboardScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
+import SeatStatusScreen from '../screens/SeatStatusScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -32,6 +33,8 @@ const MainTabsNavigator = () => {
           let iconName;
           if (route.name === 'HomeTab') {
             iconName = focused ? 'grid' : 'grid-outline';
+          } else if (route.name === 'SeatsTab') {
+            iconName = focused ? 'business' : 'business-outline'; // using business as a proxy for a bus/seats icon
           } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'person-circle' : 'person-circle-outline';
           }
@@ -43,6 +46,11 @@ const MainTabsNavigator = () => {
         name="HomeTab"
         component={DriverDashboardScreen}
         options={{ tabBarLabel: 'Dashboard' }}
+      />
+      <Tab.Screen
+        name="SeatsTab"
+        component={SeatStatusScreen}
+        options={{ tabBarLabel: 'Seats' }}
       />
       <Tab.Screen
         name="ProfileTab"

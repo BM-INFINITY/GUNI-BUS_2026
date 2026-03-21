@@ -19,3 +19,14 @@ export const getRouteDetails = async () => {
   const response = await api.get('/driver/route-details');
   return response.data;
 };
+
+/**
+ * Get Seat Map for Assigned Bus
+ * GET /api/seat-reservation/seat-map/:busId/:date/:routeId?direction=...
+ */
+export const getSeatMap = async (busId, date, routeId, direction) => {
+  const response = await api.get(
+    `/seat-reservation/seat-map/${busId}/${date}/${routeId}?direction=${direction}`
+  );
+  return response.data;
+};
