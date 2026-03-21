@@ -42,6 +42,7 @@ import RouteDetails from './pages/driver/RouteDetails';
 import DriverCheckpointForm from './pages/driver/DriverCheckpointForm';
 import MyScanHistory from './pages/driver/MyScanHistory';
 import ReportFoundItem from './pages/driver/ReportFoundItem';
+import SeatStatus from './pages/driver/SeatStatus';
 
 // Lost & Found pages
 import LostAndFound from './pages/student/LostAndFound';
@@ -54,6 +55,9 @@ import RaiseComplaint from './pages/student/RaiseComplaint';
 import MyComplaints from './pages/student/MyComplaints';
 import ComplaintsDashboard from './pages/admin/ComplaintsDashboard';
 import DemandForecastDashboard from './pages/admin/DemandForecastDashboard';
+import SeatReservation from './pages/student/SeatReservation';
+import MyReservations from './pages/student/MyReservations';
+import SeatReservationAdmin from './pages/admin/SeatReservationAdmin';
 
 const queryClient = new QueryClient();
 
@@ -206,6 +210,24 @@ function AppRoutes() {
                 }
             />
 
+            {/* Seat Reservation — Student */}
+            <Route
+                path="/student/seat-reservation"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <SeatReservation />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/student/my-reservations"
+                element={
+                    <ProtectedRoute allowedRoles={['student']}>
+                        <MyReservations />
+                    </ProtectedRoute>
+                }
+            />
+
             {/* Lost & Found — Driver */}
             <Route
                 path="/driver/report-found"
@@ -230,6 +252,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['driver']}>
                         <ScanPass />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/driver/seats"
+                element={
+                    <ProtectedRoute allowedRoles={['driver']}>
+                        <SeatStatus />
                     </ProtectedRoute>
                 }
             />
@@ -294,6 +324,9 @@ function AppRoutes() {
 
                 {/* Complaints Module */}
                 <Route path="/admin/complaints" element={<ComplaintsDashboard />} />
+
+                {/* Seat Reservation Module */}
+                <Route path="/admin/seat-reservations" element={<SeatReservationAdmin />} />
 
                 <Route path="/admin/settings" element={<div>Settings Component</div>} />
             </Route>

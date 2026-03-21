@@ -48,6 +48,8 @@ function validateTimeWindow(shift, currentScanCount, currentTime) {
 
     // CASE 1: FIRST SCAN (Boarding) -> Count is 0
     if (currentScanCount === 0) {
+        console.log("Current time: ", timeStr);
+        console.log("Boarding end time: ", rules.boardingEnd);
         if (timeStr <= rules.boardingEnd) {
             return { allowed: true, phase: 'boarding' };
         } else {
@@ -60,6 +62,8 @@ function validateTimeWindow(shift, currentScanCount, currentTime) {
 
     // CASE 2: SECOND SCAN (Return) -> Count is 1
     if (currentScanCount === 1) {
+        console.log("Current time: ", timeStr);
+        console.log("Return start time: ", rules.returnStart);
         if (timeStr >= rules.returnStart) {
             return { allowed: true, phase: 'return' };
         } else {
