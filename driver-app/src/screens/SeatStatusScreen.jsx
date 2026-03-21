@@ -28,12 +28,27 @@ function generateSeatLayout(totalSeats) {
   let seatNum = 1;
   while (seatNum <= totalSeats) {
     const row = [];
+    
+    // Check if there are exactly 6 seats remaining (the continuous back row)
+    if (totalSeats - seatNum + 1 === 6) {
+        for (let i = 0; i < 6; i++) {
+            row.push({ num: seatNum, window: i === 0 || i === 5 });
+            seatNum++;
+        }
+        rows.push(row);
+        break;
+    }
+
     // Left side: 2 seats
     for (let i = 0; i < 2 && seatNum <= totalSeats; i++) {
       row.push({ num: seatNum, window: i === 0 });
       seatNum++;
     }
-    row.push({ num: null, aisle: true }); // aisle gap
+    
+    if (seatNum <= totalSeats) {
+      row.push({ num: null, aisle: true }); // aisle gap
+    }
+    
     // Right side: 3 seats
     for (let i = 0; i < 3 && seatNum <= totalSeats; i++) {
       row.push({ num: seatNum, window: i === 2 });
