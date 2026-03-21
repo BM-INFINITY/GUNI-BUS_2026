@@ -69,6 +69,7 @@ const lostFoundRoutes = require("./routes/lostFound");
 const rideIntentRoutes = require("./routes/rideIntent");
 const forecastRoutes = require("./routes/demandForecast");
 const complaintsRoutes = require('./routes/complaints');
+const seatReservationRoutes = require('./routes/seatReservation');
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -103,6 +104,7 @@ app.use("/api/lost-found", lostFoundRoutes);
 app.use("/api/ride-intent", rideIntentRoutes);
 app.use("/api/forecast", forecastRoutes);
 app.use("/api/complaints", complaintsRoutes);
+app.use("/api/seat-reservation", seatReservationRoutes);
 
 // Health check route
 app.get("/api/health", (req, res) => {
