@@ -36,6 +36,7 @@ import AdminItemDetail from './pages/admin/AdminItemDetail';
 
 
 //Driver pages
+import DriverLayout from './components/layout/DriverLayout';
 import DriverDashboard from "./pages/driver/DriverDashboard";
 import ScanPass from './pages/driver/ScanPass';
 import RouteDetails from './pages/driver/RouteDetails';
@@ -228,65 +229,24 @@ function AppRoutes() {
                 }
             />
 
-            {/* Lost & Found — Driver */}
-            <Route
-                path="/driver/report-found"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <ReportFoundItem />
-                    </ProtectedRoute>
-                }
-            />
+            {/* Lost & Found — Driver - Moved under DriverLayout */}
 
             {/* Driver Routes */}
             <Route
-                path="/driver"
                 element={
                     <ProtectedRoute allowedRoles={['driver']}>
-                        <DriverDashboard />
+                        <DriverLayout />
                     </ProtectedRoute>
                 }
-            />
-            <Route
-                path="/driver/scan"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <ScanPass />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/driver/seats"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <SeatStatus />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/driver/route"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <RouteDetails />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/driver/checkpoint"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <DriverCheckpointForm />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/driver/scan-history"
-                element={
-                    <ProtectedRoute allowedRoles={['driver']}>
-                        <MyScanHistory />
-                    </ProtectedRoute>
-                }
-            />
+            >
+                <Route path="/driver" element={<DriverDashboard />} />
+                <Route path="/driver/scan" element={<ScanPass />} />
+                <Route path="/driver/seats" element={<SeatStatus />} />
+                <Route path="/driver/route" element={<RouteDetails />} />
+                <Route path="/driver/checkpoint" element={<DriverCheckpointForm />} />
+                <Route path="/driver/scan-history" element={<MyScanHistory />} />
+                <Route path="/driver/report-found" element={<ReportFoundItem />} />
+            </Route>
 
             {/* Admin Routes */}
             <Route

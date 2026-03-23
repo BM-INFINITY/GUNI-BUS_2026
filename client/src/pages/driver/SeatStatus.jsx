@@ -168,26 +168,18 @@ export default function SeatStatus() {
     const seatRows = generateSeatLayout(totalSeats);
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-transparent flex flex-col font-sans">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-10">
-                <div className="max-w-2xl mx-auto flex items-center">
-                    <button
-                        onClick={() => navigate('/driver')}
-                        className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition-colors mr-3 -ml-2"
-                    >
-                        <ChevronLeft size={24} />
-                    </button>
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-800">Live Seat Status</h1>
-                        <p className="text-sm font-medium text-slate-500 line-clamp-1">
-                            {busData.busNumber} • {routeData.routeNumber} ({routeData.routeName})
-                        </p>
-                    </div>
+            <div className="mb-6 sticky top-0 z-10 bg-slate-50 border-b border-slate-200 py-3">
+                <div className="flex flex-col">
+                    <h1 className="text-xl font-bold text-slate-800">Live Seat Status</h1>
+                    <p className="text-sm font-medium text-slate-500 line-clamp-1">
+                        {busData.busNumber} • {routeData.routeNumber} ({routeData.routeName})
+                    </p>
                 </div>
             </div>
 
-            <div className="flex-1 max-w-2xl w-full mx-auto p-4 flex flex-col gap-6">
+            <div className="flex-1 w-full flex flex-col gap-6 pb-6">
                 
                 {/* Direction Toggle */}
                 <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 flex">
@@ -214,7 +206,7 @@ export default function SeatStatus() {
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center justify-center gap-6 px-4">
+                <div className="flex items-center justify-center gap-6">
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 rounded bg-white border border-slate-300"></div>
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Available</span>
@@ -254,7 +246,7 @@ export default function SeatStatus() {
                 </div>
 
                 {/* Summary */}
-                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-8 flex items-center justify-between">
+                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-8 flex items-center justify-between shadow-sm">
                     <div>
                         <p className="text-sm font-medium text-indigo-900 mb-1">Total Occupancy</p>
                         <p className="text-2xl font-black text-indigo-700">

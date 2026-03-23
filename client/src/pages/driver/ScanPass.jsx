@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
 import axios from "axios";
-import "./ScanPass.css";
 
 const isDev = import.meta.env.MODE === "development";
 
@@ -211,146 +210,141 @@ export default function ScanPass() {
     };
 
     return (
-        <div className="scan-page-modern">
-            <header className="scan-header-modern">
-                <button className="back-icon-btn" onClick={() => navigate("/driver")}>
-                    back to home
-                </button>
-            </header>
+        <div className="flex flex-col h-full bg-slate-50 overflow-y-auto w-full max-w-lg mx-auto pb-8">
+            <div className="bg-white px-5 py-4 border-b border-slate-100 mb-4 sticky top-0 z-10 shadow-sm">
+                <h2 className="text-xl font-bold text-slate-800 flex items-center justify-center gap-2">
+                    Scan Pass
+                </h2>
+            </div>
 
-            <div className="scan-content-wrapper turbo-mode">
-                {/* AUTOMATED TRIP TYPE - NO UI TOGGLE NEEDED */}
-                <div
-                    className="trip-type-info"
-                    style={{ textAlign: "center", margin: "10px 0", opacity: 0.7 }}
-                >
-                    <small>Time-Based Trip Detection Active</small>
-                </div>
-
-                <div className="scanner-layout">
-                    <div className="scanner-card compact">
-                        <div className="scanner-window-wrapper">
-                            <div id="reader" className="qr-reader-modern"></div>
-
-                            <div
-                                className={`scan-overlay ${processing ? "active-pulse" : ""}`}
-                            >
-                                <div className="corner clean-top-left"></div>
-                                <div className="corner clean-top-right"></div>
-                                <div className="corner clean-bottom-right"></div>
-                                <div className="corner clean-bottom-left"></div>
+            <div className="px-4 flex flex-col items-center">
+                {/* Scanner Interface */}
+                <div className="w-full bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-6 relative">
+                    <div id="reader" className="w-full min-h-[300px] bg-slate-900 flex items-center justify-center relative">
+                        {processing && (
+                            <div className="absolute inset-0 z-20 bg-indigo-900/40 backdrop-blur-sm flex flex-col items-center justify-center text-white">
+                                <div className="w-12 h-12 border-4 border-indigo-400 border-t-white rounded-full animate-spin mb-3"></div>
+                                <span className="font-semibold tracking-wider">Verifying...</span>
                             </div>
-
-                            {processing && (
-                                <div className="processing-indicator">
-                                    <div className="spinner-micro"></div>
-                                    <span>Verifying...</span>
-                                </div>
-                            )}
-
-                            {error && error.includes("permission") && (
-                                <div className="permission-retry-overlay">
-                                    <p>{error}</p>
-                                    <button
-                                        onClick={() => window.location.reload()}
-                                        className="retry-btn"
-                                    >
-                                        Retry Camera
-                                    </button>
-                                </div>
-                            )}
+                        )}
+                        {/* Overlay frame for QR target */}
+                        <div className={`absolute inset-4 border-2 rounded-2xl z-10 pointer-events-none transition-colors duration-300 ${processing ? 'border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.5)]' : 'border-white/30'}`}>
+                            <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+                            <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                            <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+                            <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl"></div>
                         </div>
                     </div>
 
-                    <div className="live-result-zone">
-                        {/* ... Error & Result Display ... */}
-                        {error && !error.includes("permission") && (
-                            <div className="result-flash error animate-pop-in">
-                                <div className="flash-icon">
+                    {error && error.includes("permission") && (
+                        <div className="p-6 text-center bg-red-50 text-red-600 border-t border-red-100">
+                            <p className="font-medium mb-3">{error}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-transform active:scale-95 shadow-sm"
+                            >
+                                Retry Camera
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Status/Result Area */}
+                <div className="w-full">
+                    {error && !error.includes("permission") && (
+                        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-4 animate-[bounce_0.5s_ease-in-out]">
+                            <div className="flex gap-4 items-start">
+                                <div className="text-3xl flex-shrink-0">
                                     {error.includes("Valid for") ? "🚫" : "❌"}
                                 </div>
-                                <div className="flash-content">
-                                    <h3>Scan Failed</h3>
-                                    <p>{error}</p>
+                                <div>
+                                    <h3 className="font-bold text-red-800 text-lg">Scan Failed</h3>
+                                    <p className="text-red-600 text-sm mt-1">{error}</p>
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {lastScan && (
-                            <div
-                                className={`result-flash ${lastScan.success ? "success" : lastScan.warning ? "warning" : "error"} animate-pop-in`}
-                                key={lastScan.timestamp.getTime()}
-                            >
-                                <div className="flash-icon">
-                                    {lastScan.success ? "✅" : lastScan.warning ? "⚠️" : "⛔"}
+                    {lastScan && (
+                        <div
+                            className={`rounded-2xl p-5 mb-4 shadow-sm border transition-all transform animate-[bounce_0.5s_ease-in-out] ${lastScan.success
+                                ? "bg-emerald-50 border-emerald-200"
+                                : lastScan.warning
+                                    ? "bg-amber-50 border-amber-200"
+                                    : "bg-red-50 border-red-200"
+                                }`}
+                            key={lastScan.timestamp.getTime()}
+                        >
+                            <div className="flex flex-col gap-4">
+                                <div className="flex gap-4 items-start">
+                                    <div className="text-3xl flex-shrink-0">
+                                        {lastScan.success ? "✅" : lastScan.warning ? "⚠️" : "⛔"}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className={`font-bold text-lg leading-tight ${lastScan.success ? 'text-emerald-800' : lastScan.warning ? 'text-amber-800' : 'text-red-800'
+                                            }`}>
+                                            {lastScan.message}
+                                        </h3>
+                                    </div>
                                 </div>
-                                <div className="flash-content">
-                                    <h3>{lastScan.message}</h3>
-                                    {lastScan.student && (
-                                        <div className="student-result-card">
-                                            {lastScan.studentPhoto && (
-                                                <img
-                                                    src={lastScan.studentPhoto}
-                                                    alt="Student"
-                                                    className="student-scan-photo"
-                                                />
-                                            )}
-                                            <div className="student-scan-details">
-                                                <p className="student-name-large">{lastScan.student}</p>
-                                                <p className="student-enrollment">{lastScan.enrollment}</p>
 
-                                                <div className="student-extra-info">
-                                                    {lastScan.studentDOB && (
-                                                        <span className="info-badge">
-                                                            🎂 {new Date(lastScan.studentDOB).toLocaleDateString()}
-                                                        </span>
-                                                    )}
-                                                    {lastScan.studentMobile && (
-                                                        <span className="info-badge">
-                                                            📞 {lastScan.studentMobile}
-                                                        </span>
-                                                    )}
-                                                    {lastScan.passShift && (
-                                                        <span className="info-badge shift-badge">
-                                                            {lastScan.passShift} Batch
-                                                        </span>
-                                                    )}
-                                                </div>
+                                {lastScan.student && (
+                                    <div className="bg-white/60 rounded-xl p-4 flex gap-4 mt-2">
+                                        {lastScan.studentPhoto ? (
+                                            <img
+                                                src={lastScan.studentPhoto}
+                                                alt="Student"
+                                                className="w-16 h-16 rounded-lg object-cover border border-slate-200 shadow-sm"
+                                            />
+                                        ) : (
+                                            <div className="w-16 h-16 rounded-lg bg-slate-200 flex items-center justify-center text-2xl font-bold text-slate-500 border border-slate-300">
+                                                {lastScan.student.charAt(0)}
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                            <p className="font-bold text-slate-800 text-lg leading-tight truncate">{lastScan.student}</p>
+                                            <p className="text-slate-500 font-mono text-sm mb-2">{lastScan.enrollment}</p>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                {lastScan.passShift && (
+                                                    <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded">
+                                                        {lastScan.passShift}
+                                                    </span>
+                                                )}
+                                                {lastScan.studentDOB && (
+                                                    <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                                        <span>🎂</span> {new Date(lastScan.studentDOB).toLocaleDateString()}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {!lastScan && !error && (
-                            <div className="ready-state-msg">
-                                <p>Ready to Scan...</p>
-                            </div>
-                        )}
-                        {/* ENABLED FOR PRODUCTION DEMO */}
-                        {true && (
-                            <div
-                                style={{
-                                    marginBottom: "12px",
-                                    padding: "10px",
-                                    border: "1px dashed #999",
-                                    borderRadius: "6px",
-                                    background: "#fafafa",
-                                }}
-                            >
-                                <label style={{ fontWeight: "bold" }}>
-                                    DEV ONLY – Mock Scan Time
-                                </label>
-                                <input
-                                    type="datetime-local"
-                                    value={mockTime}
-                                    onChange={(e) => setMockTime(e.target.value)}
-                                    style={{ width: "100%", marginTop: "6px" }}
-                                />
-                            </div>
-                        )}
-                    </div>
+                    {!lastScan && !error && (
+                        <div className="text-center p-8 bg-slate-100 rounded-2xl border border-slate-200 border-dashed">
+                            <span className="text-4xl block mb-2 opacity-50">📱</span>
+                            <p className="text-slate-500 font-medium">Position QR code in the frame</p>
+                        </div>
+                    )}
+
+                    {/* ENABLED FOR PRODUCTION DEMO */}
+                    {true && (
+                        <div className="mt-8 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-100/50">
+                            <label className="block font-bold text-slate-600 text-xs uppercase tracking-wider mb-2">
+                                DEV ONLY – Mock Scan Time
+                            </label>
+                            <input
+                                type="datetime-local"
+                                value={mockTime}
+                                onChange={(e) => setMockTime(e.target.value)}
+                                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

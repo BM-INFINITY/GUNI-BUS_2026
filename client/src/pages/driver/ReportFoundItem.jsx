@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { lostFound } from '../../services/api';
-import './DriverDashboard.css';
 
 const CATEGORIES = [
     { value: 'id_card', label: 'ID Card', icon: '🪪' },
@@ -75,94 +74,56 @@ export default function ReportFoundItem() {
 
     if (submitted) {
         return (
-            <div className="driver-dashboard-container">
-                <header className="driver-app-header">
-                    <div className="header-brand">
-                        <div className="brand-logo">🎒</div>
-                        <div>
-                            <h1>Found Item Reported</h1>
-                            <p className="subtitle">University Bus System</p>
-                        </div>
+            <div className="flex flex-col h-full bg-slate-50 w-full max-w-lg mx-auto pb-8 p-4">
+                <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm text-center flex flex-col items-center mt-6">
+                    <div className="text-6xl mb-4 bg-emerald-50 w-24 h-24 rounded-full flex items-center justify-center">
+                        ✅
                     </div>
-                </header>
-                <main className="dashboard-content">
-                    <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-                        <div style={{ fontSize: '64px', marginBottom: '1rem' }}>✅</div>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: '#111827' }}>
-                            Item Logged Successfully
-                        </h2>
-                        <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
-                            The found item has been recorded and will be visible to students. Thank you!
-                        </p>
-                        <button
-                            className="action-card primary"
-                            style={{ display: 'inline-flex', maxWidth: '220px', margin: '0 auto' }}
-                            onClick={() => navigate('/driver')}
-                        >
-                            <div className="icon-wrapper">🏠</div>
-                            <div className="action-text">
-                                <h3>Back to Dashboard</h3>
-                            </div>
-                        </button>
-                    </div>
-                </main>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Item Logged Successfully</h2>
+                    <p className="text-slate-500 mb-8 leading-relaxed">
+                        The found item has been recorded and will be visible to students. Thank you!
+                    </p>
+                    <button
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
+                        onClick={() => navigate('/driver')}
+                    >
+                        <span>🏠</span> Back to Dashboard
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="driver-dashboard-container">
+        <div className="flex flex-col h-full bg-slate-50 w-full max-w-lg mx-auto pb-8">
             {/* Header */}
-            <header className="driver-app-header">
-                <div className="header-brand">
-                    <div className="brand-logo">🎒</div>
+            <header className="bg-white px-5 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+                <div className="flex items-center gap-3">
                     <div>
-                        <h1>Report Found Item</h1>
-                        <p className="subtitle">Log an item found on your bus</p>
-                    </div>
-                </div>
-                <div className="header-profile">
-                    <div className="profile-info">
-                        <span className="profile-name">{user?.name}</span>
-                        <span className="profile-role">Driver</span>
+                        <h1 className="text-lg font-bold text-slate-800 leading-tight">Report Found Item</h1>
                     </div>
                 </div>
             </header>
 
-            <main className="dashboard-content">
+            <main className="p-4 space-y-6">
                 {/* Bus/Route info banner */}
-                <div style={{
-                    background: '#eef2ff',
-                    border: '1px solid #c7d2fe',
-                    borderRadius: '12px',
-                    padding: '12px 16px',
-                    marginBottom: '1.25rem',
-                    fontSize: '0.85rem',
-                    color: '#4338ca',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                }}>
-                    <span>🚌</span>
-                    <span>Bus &amp; Route will be auto-linked from your assignment.</span>
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-sm text-indigo-700 flex items-start gap-2 shadow-sm">
+                    <span className="font-medium pt-0.5">Bus &amp; Route will be auto-linked from your assignment.</span>
                 </div>
 
                 {error && (
-                    <div style={{
-                        background: '#fef2f2', border: '1px solid #fecaca',
-                        borderRadius: '12px', padding: '12px 16px',
-                        marginBottom: '1rem', color: '#dc2626', fontSize: '0.875rem'
-                    }}>
-                        ⚠️ {error}
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-600 flex items-start gap-2 shadow-sm animate-pulse">
+                        <span className="text-lg">⚠️</span>
+                        <span className="font-bold pt-0.5">{error}</span>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
 
                     {/* Item Name */}
                     <div>
-                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: '6px' }}>
-                            Item Name <span style={{ color: '#ef4444' }}>*</span>
+                        <label className="block font-bold text-slate-700 text-sm mb-1.5 uppercase tracking-wide">
+                            Item Name <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -170,40 +131,28 @@ export default function ReportFoundItem() {
                             placeholder="e.g. Blue Water Bottle"
                             value={form.itemName}
                             onChange={e => setForm(f => ({ ...f, itemName: e.target.value }))}
-                            style={{
-                                width: '100%', padding: '12px 14px',
-                                border: '1px solid #d1d5db', borderRadius: '10px',
-                                fontSize: '0.9rem', boxSizing: 'border-box', outline: 'none'
-                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
                         />
                     </div>
 
                     {/* Category */}
                     <div>
-                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: '6px' }}>
-                            Category <span style={{ color: '#ef4444' }}>*</span>
+                        <label className="block font-bold text-slate-700 text-sm mb-1.5 uppercase tracking-wide">
+                            Category <span className="text-red-500">*</span>
                         </label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '8px' }}>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                             {CATEGORIES.map(cat => (
                                 <button
                                     key={cat.value}
                                     type="button"
                                     onClick={() => setForm(f => ({ ...f, category: cat.value }))}
-                                    style={{
-                                        padding: '10px 8px',
-                                        borderRadius: '10px',
-                                        border: form.category === cat.value ? '2px solid #4f46e5' : '1px solid #e5e7eb',
-                                        background: form.category === cat.value ? '#eef2ff' : '#fff',
-                                        color: form.category === cat.value ? '#4338ca' : '#6b7280',
-                                        fontWeight: form.category === cat.value ? 700 : 500,
-                                        fontSize: '0.8rem',
-                                        cursor: 'pointer',
-                                        textAlign: 'center',
-                                        transition: 'all 0.15s'
-                                    }}
+                                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all active:scale-95 ${form.category === cat.value
+                                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm ring-1 ring-indigo-500'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                        }`}
                                 >
-                                    <div style={{ fontSize: '1.4rem', marginBottom: '4px' }}>{cat.icon}</div>
-                                    {cat.label}
+                                    <div className="text-2xl mb-1">{cat.icon}</div>
+                                    <span className={`text-[10px] sm:text-xs text-center leading-tight ${form.category === cat.value ? 'font-bold' : 'font-medium'}`}>{cat.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -211,8 +160,8 @@ export default function ReportFoundItem() {
 
                     {/* Description */}
                     <div>
-                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: '6px' }}>
-                            Description <span style={{ color: '#ef4444' }}>*</span>
+                        <label className="block font-bold text-slate-700 text-sm mb-1.5 uppercase tracking-wide">
+                            Description <span className="text-red-500">*</span>
                         </label>
                         <textarea
                             required
@@ -220,18 +169,14 @@ export default function ReportFoundItem() {
                             placeholder="Colour, brand, condition, where it was found on the bus..."
                             value={form.description}
                             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                            style={{
-                                width: '100%', padding: '12px 14px',
-                                border: '1px solid #d1d5db', borderRadius: '10px',
-                                fontSize: '0.9rem', boxSizing: 'border-box', resize: 'vertical', outline: 'none'
-                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all resize-none"
                         />
                     </div>
 
                     {/* Date Found */}
                     <div>
-                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: '6px' }}>
-                            Date Found <span style={{ color: '#ef4444' }}>*</span>
+                        <label className="block font-bold text-slate-700 text-sm mb-1.5 uppercase tracking-wide">
+                            Date Found <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="date"
@@ -239,24 +184,20 @@ export default function ReportFoundItem() {
                             max={today}
                             value={form.foundDate}
                             onChange={e => setForm(f => ({ ...f, foundDate: e.target.value }))}
-                            style={{
-                                width: '100%', padding: '12px 14px',
-                                border: '1px solid #d1d5db', borderRadius: '10px',
-                                fontSize: '0.9rem', boxSizing: 'border-box', outline: 'none'
-                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-medium"
                         />
                     </div>
 
                     {/* Storage Location */}
-                    <div>
-                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: '6px' }}>
-                            Storage Location <span style={{ color: '#9ca3af', fontWeight: 400 }}>(Optional)</span>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                        <label className="block font-bold text-slate-700 text-sm mb-3 uppercase tracking-wide">
+                            Storage Location <span className="text-slate-400 font-medium normal-case">(Optional)</span>
                         </label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                        <div className="grid grid-cols-3 gap-2">
                             {[
-                                { key: 'location', placeholder: 'Place (e.g. Depot)' },
-                                { key: 'rack', placeholder: 'Rack (e.g. A)' },
-                                { key: 'box', placeholder: 'Box (e.g. 3)' }
+                                { key: 'location', placeholder: 'Place (Depot)' },
+                                { key: 'rack', placeholder: 'Rack (A)' },
+                                { key: 'box', placeholder: 'Box (3)' }
                             ].map(field => (
                                 <input
                                     key={field.key}
@@ -267,10 +208,7 @@ export default function ReportFoundItem() {
                                         ...f,
                                         storageLocation: { ...f.storageLocation, [field.key]: e.target.value }
                                     }))}
-                                    style={{
-                                        padding: '10px', border: '1px solid #d1d5db',
-                                        borderRadius: '8px', fontSize: '0.8rem', outline: 'none', boxSizing: 'border-box'
-                                    }}
+                                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-medium placeholder-slate-400"
                                 />
                             ))}
                         </div>
@@ -278,66 +216,67 @@ export default function ReportFoundItem() {
 
                     {/* Image Upload */}
                     <div>
-                        <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: '6px' }}>
-                            Photo of Item <span style={{ color: '#9ca3af', fontWeight: 400 }}>(Recommended)</span>
+                        <label className="block font-bold text-slate-700 text-sm mb-1.5 uppercase tracking-wide">
+                            Photo of Item <span className="text-slate-400 font-medium normal-case">(Recommended)</span>
                         </label>
-                        <label style={{
-                            display: 'flex', alignItems: 'center', gap: '12px',
-                            border: '2px dashed #d1d5db', borderRadius: '12px',
-                            padding: '16px', cursor: 'pointer',
-                            background: form.imageBase64 ? '#f0fdf4' : '#fafafa'
-                        }}>
-                            <span style={{ fontSize: '2rem' }}>📸</span>
+                        <label className={`flex items-center gap-4 border-2 border-dashed rounded-2xl p-4 cursor-pointer transition-colors ${form.imageBase64 ? 'border-emerald-300 bg-emerald-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100'
+                            }`}>
+                            <div className="text-3xl bg-white w-12 h-12 flex items-center justify-center rounded-xl shadow-sm border border-slate-100">
+                                {form.imageBase64 ? '🖼️' : '📸'}
+                            </div>
                             <div>
-                                <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#374151' }}>
-                                    {form.imageBase64 ? '✅ Photo selected' : 'Tap to take / upload photo'}
+                                <div className={`font-bold ${form.imageBase64 ? 'text-emerald-700' : 'text-slate-700'}`}>
+                                    {form.imageBase64 ? 'Photo selected' : 'Tap to take photo'}
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Max 2 MB</div>
+                                <div className="text-xs text-slate-500 font-medium mt-0.5">Max 2 MB (Optional)</div>
                             </div>
                             <input
                                 type="file"
                                 accept="image/*"
                                 capture="environment"
                                 onChange={handleImageChange}
-                                style={{ display: 'none' }}
+                                className="hidden"
                             />
                         </label>
                         {form.imageBase64 && (
-                            <img
-                                src={form.imageBase64}
-                                alt="Preview"
-                                style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '10px', marginTop: '8px' }}
-                            />
+                            <div className="mt-3 relative inline-block w-full">
+                                <img
+                                    src={form.imageBase64}
+                                    alt="Preview"
+                                    className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setForm(f => ({ ...f, imageBase64: '' }));
+                                    }}
+                                    className="absolute top-2 right-2 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-95"
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         )}
                     </div>
 
                     {/* Submit */}
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        style={{
-                            background: submitting ? '#a5b4fc' : '#4f46e5',
-                            color: 'white', border: 'none',
-                            padding: '14px', borderRadius: '12px',
-                            fontSize: '1rem', fontWeight: 700,
-                            cursor: submitting ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                        }}
-                    >
-                        {submitting ? '⏳ Submitting...' : '✅ Report This Item'}
-                    </button>
+                    <div className="pt-2 flex flex-col gap-3">
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white w-full py-4 rounded-xl font-bold text-lg shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:active:scale-100"
+                        >
+                            {submitting ? '⏳ Submitting...' : '✅ Report This Item'}
+                        </button>
 
-                    <button
-                        type="button"
-                        onClick={() => navigate('/driver')}
-                        style={{
-                            background: 'transparent', border: '1px solid #e5e7eb',
-                            padding: '12px', borderRadius: '12px',
-                            fontSize: '0.9rem', color: '#6b7280', cursor: 'pointer'
-                        }}
-                    >
-                        Cancel — Back to Dashboard
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/driver')}
+                            className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 w-full py-3.5 rounded-xl font-bold transition-all active:scale-95"
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </form>
             </main>
         </div>
